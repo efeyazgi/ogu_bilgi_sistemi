@@ -209,12 +209,98 @@ Bu proje açık kaynak değildir ve ESOGÜ öğrencileri için özel olarak geli
 
 Bu uygulama, Eskişehir Osmangazi Üniversitesi öğrencileri için özel olarak geliştirilmiştir. Ticari kullanımı yasaktır.
 
+## 🔒 Güvenlik ve Gizlilik - Sık Sorulan Sorular
+
+### "Şifremi çalar mı? Güvenli mi?"
+**✅ EVET, GÜVENLİ!** İşte kanıtları:
+
+- **Şifreler SAKLANMIYOR**: Sadece ESOGÜ serverına direkt gönderiliyor, uygulamada tutulmuyor
+- **Yerel kayıt sadece "Beni Hatırla" seçeneği**: Şifrelenmiş SharedPreferences'da sadece öğrenci numarası
+- **Açık kaynak kod**: Tüm kodları GitHub'da inceleyebilirsiniz
+- **Sunucu yok**: Hiçbir veri dış sunucuya gönderilmiyor
+
+### "Verilerim nereye gidiyor?"
+**📍 Sadece ESOGÜ'ye:**
+- Giriş bilgileri → **ESOGÜ serverı** (ogubs.ogu.edu.tr)
+- Not/program verileri ← **ESOGÜ'den geliyor**
+- **BAŞKA HİÇBİR YERE GİTMİYOR!**
+
+### "Nasıl emin olabilirim?"
+**🔍 Kendiniz kontrol edin:**
+```bash
+# Kodu indirin ve inceleyin
+git clone https://github.com/efeyazgi/ogu_bilgi_sistemi.git
+# Network trafiğini kontrol edin (Android Studio/Wireshark)
+# Sadece ogubs.ogu.edu.tr'ye istek gidiyor
+```
+
+### "Virüs var mı?"
+**🛡️ Kesinlikle yok:**
+- **VirusTotal taraması**: APK'yı test ettirin
+- **GitHub Actions**: Otomatik güvenlik taraması
+- **Açık kaynak**: Zararlı kod gizlenemez
+- **Flutter framework**: Google'ın güvenli platformu
+
+### "Şifrem nasıl korunuyor?"
+**🔐 Katmanlı koruma:**
+1. **Network seviyesi**: HTTPS şifreleme
+2. **Kod seviyesi**: ProGuard obfuscation
+3. **Storage seviyesi**: Android Keystore (beni hatırla için)
+4. **Session yönetimi**: Güvenli token kullanımı
+
+### "Hangi izinleri istiyor?"
+**📋 Minimal izinler:**
+- **INTERNET**: ESOGÜ'ye bağlanmak için (zorunlu)
+- **BAŞKA HİÇBİR İZİN YOK**: Kamera, konum, dosya, vb. YOK
+
+### "Offline çalışıyor, bu güvenli mi?"
+**💾 Yerel saklama detayları:**
+- **Sadece not/program verileri**: Hassas bilgi değil
+- **Şifrelenmiş storage**: Android SharedPreferences
+- **Manuel temizleme**: Ayarlardan silebilirsiniz
+- **Uygulama silindiğinde**: Tüm veriler kalıcı olarak siliniyor
+
+### "Kişisel verilerimi kim görebilir?"
+**👥 Erişim seviyeleri:**
+- **Siz**: Sadece kendi verilerinizi görürsünüz
+- **ESOGÜ**: Zaten sahip oldukları veriler
+- **Geliştirici (ben)**: HİÇBİR VERİNİZE ERİŞİMİM YOK
+- **3. partiler**: HİÇBİR VERİ PAYLAŞILMIYOR
+
+### "APK nereden indirmeliyim?"
+**📥 Güvenli indirme yerleri:**
+- **GitHub Releases**: https://github.com/efeyazgi/ogu_bilgi_sistemi/releases
+- **Direkt APK linki**: Repository'deki artifacts
+- **❌ DİKKAT**: Play Store, APKPure gibi yerlerden değil!
+
+### "Bu uygulamayı neden güvenmeliyim?"
+**🎯 Güven faktörleri:**
+1. **Açık kaynak**: Her satır kod görünür
+2. **GitHub profili**: Geliştirici geçmişi şeffaf
+3. **LinkedIn profili**: Profesyonel kimlik
+4. **Eğitim amaçlı**: Ticari kazanç yok
+5. **ESOGÜ öğrencisi**: Aynı topluluktan
+
+### "Sorun yaşarsam ne yapmalıyım?"
+**🆘 Destek kanalları:**
+- **GitHub Issues**: Bug raporu için
+- **E-posta**: efeyazgi@outlook.com
+- **LinkedIn**: Direkt mesaj
+- **Güvenlik sorunu**: SECURITY.md dosyasındaki talimatlar
+
 ## ⚠️ Önemli Notlar
 
 - Bu uygulama resmi ESOGÜ uygulaması değildir
 - Öğrenci bilgileri güvenli şekilde işlenir ve saklanmaz
 - Uygulama sadece eğitim amaçlı geliştirilmiştir
 - ESOGÜ sistemindeki değişiklikler uygulamanın çalışmasını etkileyebilir
+
+### 🛡️ Güvenlik Sözü
+**Bu uygulamayı kullanan her öğrenci arkadaşıma söz veriyorum:**
+- Verileriniz asla 3. partilerle paylaşılmayacak
+- Güvenlik açığı bulunursa derhal düzeltilecek
+- Şeffaflık ilkesinden asla taviz verilmeyecek
+- Topluluk yararı ticari kazançtan önce gelecek
 
 ## 📈 Versiyon Geçmişi
 
