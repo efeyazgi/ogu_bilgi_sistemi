@@ -217,7 +217,7 @@ class ApiService {
 ### Communication Channels
 - **Issues**: GitHub Issues for bugs/features
 - **Discussions**: GitHub Discussions for questions
-- **Email**: efeyazgi@outlook.com for direct contact
+- **Email**: efeyazgi@yahoo.com for direct contact
 
 ### Resources
 - [Flutter Documentation](https://flutter.dev/docs)

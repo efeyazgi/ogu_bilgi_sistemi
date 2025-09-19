@@ -1,6 +1,6 @@
 # Privacy Policy / Gizlilik Politikası
 
-**Son Güncelleme: 20 Eylül 2024**
+**Son Güncelleme: 20 Eylül 2025**
 
 ## 🇹🇷 Türkçe
 
@@ -102,7 +102,7 @@ Yöntem 3: Uygulamayı kaldırma
 
 ### İletişim
 Gizlilik konularında:
-- **E-posta**: efeyazgi@outlook.com
+- **E-posta**: efeyazgi@yahoo.com
 - **GitHub**: https://github.com/efeyazgi/ogu_bilgi_sistemi/issues
 - **Konu Başlığı**: "[PRIVACY] Gizlilik Politikası"
 
@@ -208,7 +208,7 @@ Method 3: Uninstalling the app
 
 ### Contact
 For privacy matters:
-- **Email**: efeyazgi@outlook.com
+- **Email**: efeyazgi@yahoo.com
 - **GitHub**: https://github.com/efeyazgi/ogu_bilgi_sistemi/issues
 - **Subject**: "[PRIVACY] Privacy Policy"
 

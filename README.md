@@ -284,7 +284,7 @@ git clone https://github.com/efeyazgi/ogu_bilgi_sistemi.git
 ### "Sorun yaşarsam ne yapmalıyım?"
 **🆘 Destek kanalları:**
 - **GitHub Issues**: Bug raporu için
-- **E-posta**: efeyazgi@outlook.com
+- **E-posta**: efeyazgi@yahoo.com
 - **LinkedIn**: Direkt mesaj
 - **Güvenlik sorunu**: SECURITY.md dosyasındaki talimatlar
 
@@ -316,5 +316,5 @@ git clone https://github.com/efeyazgi/ogu_bilgi_sistemi.git
 
 <div align="center">
   <p>❤️ ESOGÜ öğrencileri için sevgiyle geliştirilmiştir</p>
-  <p><strong>Efe YAZGI</strong> - 2024</p>
+  <p><strong>Efe YAZGI</strong> - 2025</p>
 </div>
