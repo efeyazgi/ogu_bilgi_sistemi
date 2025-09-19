@@ -8,8 +8,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 // MaterialApp ve diğer widget'lar için
-import 'package:ogu_not_sistemi/main.dart'; // OgubsApp
-import 'package:ogu_not_sistemi/features/auth/presentation/pages/login_screen.dart'; // LoginScreen
+import 'package:ogu_not_sistemi_v2/main.dart'; // OgubsApp
+import 'package:ogu_not_sistemi_v2/features/auth/presentation/pages/login_screen.dart'; // LoginScreen
 
 void main() {
   testWidgets('LoginScreen displays correctly and has initial elements', (

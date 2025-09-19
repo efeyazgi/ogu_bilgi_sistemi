@@ -1,7 +1,6 @@
 import 'dart:typed_data'; // Uint8List için
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:ogu_not_sistemi/core/theme/app_colors.dart';
+import 'package:ogu_not_sistemi_v2/core/theme/app_colors.dart';
 // import '../bloc/auth_bloc.dart'; // AuthBloc ve AuthState eklendiğinde
 
 class CaptchaCard extends StatelessWidget {

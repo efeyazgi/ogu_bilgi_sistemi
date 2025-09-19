@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- ESOGÜ domain'leri için HTTP trafiğine izin ver -->
+        <domain includeSubdomains="true">ogubs.ogu.edu.tr</domain>
+        <domain includeSubdomains="true">ogu.edu.tr</domain>
+        <!-- Gerekirse diğer ESOGÜ subdomainleri de eklenebilir -->
+    </domain-config>
+    
+    <!-- Debug modda tüm HTTP trafiğe izin ver (yalnızca geliştirme için) -->
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="system"/>
+            <certificates src="user"/>
+        </trust-anchors>
+    </debug-overrides>
+</network-security-config>

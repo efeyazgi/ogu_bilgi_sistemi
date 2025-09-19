@@ -1,0 +1,217 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  analyze:
+    name: Analyze Code
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.8.1'
+        channel: 'stable'
+        
+    - name: Get dependencies
+      run: flutter pub get
+      
+    - name: Verify formatting
+      run: dart format --output=none --set-exit-if-changed .
+      
+    - name: Analyze project source
+      run: dart analyze --fatal-infos
+      
+    - name: Check for outdated dependencies
+      run: flutter pub outdated
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: analyze
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.8.1'
+        channel: 'stable'
+        
+    - name: Get dependencies
+      run: flutter pub get
+      
+    - name: Run unit tests
+      run: flutter test --coverage
+      
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: coverage/lcov.info
+
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.8.1'
+        channel: 'stable'
+        
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'zulu'
+        java-version: '11'
+        
+    - name: Get dependencies
+      run: flutter pub get
+      
+    - name: Generate launcher icons
+      run: flutter pub run flutter_launcher_icons
+      
+    - name: Build debug APK
+      run: flutter build apk --debug
+      
+    - name: Build release APK
+      run: flutter build apk --release
+      
+    - name: Upload debug APK artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: android-debug-apk
+        path: build/app/outputs/flutter-apk/app-debug.apk
+        
+    - name: Upload release APK artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: android-release-apk
+        path: build/app/outputs/flutter-apk/app-release.apk
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: analyze
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [build-android, security-scan]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Download APK artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: android-release-apk
+        path: ./artifacts
+        
+    - name: Get version from pubspec.yaml
+      id: version
+      run: |
+        VERSION=$(grep 'version:' pubspec.yaml | cut -d ' ' -f 2 | cut -d '+' -f 1)
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "Tag will be: v$VERSION"
+        
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ steps.version.outputs.VERSION }}
+        release_name: OGÜ Bilgi Sistemi v${{ steps.version.outputs.VERSION }}
+        body: |
+          ## 🚀 What's New
+          
+          - Check the [CHANGELOG.md](CHANGELOG.md) for detailed changes
+          - This release includes bug fixes and improvements
+          
+          ## 📱 Download
+          
+          - **Android APK**: Download the `app-release.apk` file below
+          - **Minimum Android Version**: Android 5.0 (API 21)
+          
+          ## 🔧 Installation
+          
+          1. Download the APK file
+          2. Enable "Install from unknown sources" in Android settings
+          3. Install the APK
+          4. Use your ESOGÜ student credentials to login
+          
+          ## ⚠️ Important Notes
+          
+          - This is an unofficial app for ESOGÜ students
+          - Your credentials are not stored on external servers
+          - Report any issues on GitHub
+          
+          ---
+          
+          **Full Changelog**: https://github.com/efeyazgi/ogu_bilgi_sistemi/compare/...v${{ steps.version.outputs.VERSION }}
+        draft: false
+        prerelease: false
+        
+    - name: Upload Release APK
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./artifacts/app-release.apk
+        asset_name: ogu-bilgi-sistemi-v${{ steps.version.outputs.VERSION }}.apk
+        asset_content_type: application/vnd.android.package-archive
+
+  notify:
+    name: Notify Completion
+    runs-on: ubuntu-latest
+    needs: [analyze, test, build-android, security-scan]
+    if: always()
+    
+    steps:
+    - name: Notify success
+      if: ${{ needs.analyze.result == 'success' && needs.test.result == 'success' && needs.build-android.result == 'success' }}
+      run: |
+        echo "✅ All checks passed! Build completed successfully."
+        
+    - name: Notify failure
+      if: ${{ needs.analyze.result == 'failure' || needs.test.result == 'failure' || needs.build-android.result == 'failure' }}
+      run: |
+        echo "❌ Some checks failed. Please review the logs."
+        exit 1

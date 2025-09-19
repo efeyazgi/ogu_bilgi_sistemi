@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:ogu_not_sistemi/core/services/ogubs_service.dart';
-import 'package:ogu_not_sistemi/core/services/storage_service.dart'; // StorageService import edildi
+import 'package:ogu_not_sistemi_v2/core/services/ogubs_service.dart';
+import 'package:ogu_not_sistemi_v2/core/services/storage_service.dart'; // StorageService import edildi
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/pages/login_screen.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/grades/presentation/bloc/grades_bloc.dart';
+import 'features/schedule/presentation/bloc/schedule_bloc.dart';
 // import 'features/grades/presentation/pages/grades_screen.dart';
 
 void main() {
@@ -43,15 +44,19 @@ class OgubsApp extends StatelessWidget {
             create: (context) =>
                 GradesBloc(ogubsService: context.read<OgubsService>()),
           ),
+          BlocProvider<ScheduleBloc>(
+            create: (context) =>
+                ScheduleBloc(ogubsService: context.read<OgubsService>()),
+          ),
         ],
         child: MaterialApp(
-          title: 'OGÜ Not Sistemi',
+          title: 'OGU Bilgi Sistemi',
           theme: AppTheme.theme,
-          debugShowCheckedModeBanner:
-              false, // Geliştirme sırasında debug banner'ını kaldırır
-          home:
-              const LoginScreen(), // Başlangıç ekranı LoginScreen olarak değiştirildi
-        ), // MaterialApp için kapanış parantezi eklendi
+          darkTheme: AppTheme.darkTheme,
+          themeMode: ThemeMode.system,
+          debugShowCheckedModeBanner: false,
+          home: const LoginScreen(),
+        ),
       ),
     );
   }

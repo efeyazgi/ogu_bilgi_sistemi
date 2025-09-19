@@ -3,16 +3,20 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as html_parser; // HTML ayrıştırma için
 import 'package:html/dom.dart' as dom; // DOM elementlerine erişim için
-import 'package:ogu_not_sistemi/features/auth/data/models/login_page_data.dart';
-import 'package:ogu_not_sistemi/features/grades/data/models/academic_summary_model.dart';
-import 'package:ogu_not_sistemi/features/grades/data/models/course_grade_model.dart';
-import 'package:ogu_not_sistemi/features/grades/data/models/grades_page_data.dart';
+import 'package:ogu_not_sistemi_v2/features/auth/data/models/login_page_data.dart';
+import 'package:ogu_not_sistemi_v2/features/grades/data/models/academic_summary_model.dart';
+import 'package:ogu_not_sistemi_v2/features/grades/data/models/course_grade_model.dart';
+import 'package:ogu_not_sistemi_v2/features/grades/data/models/grades_page_data.dart';
+import 'package:ogu_not_sistemi_v2/features/schedule/data/models/course_model.dart';
+import 'package:ogu_not_sistemi_v2/features/schedule/data/models/registered_course.dart';
 
 class OgubsService {
   final http.Client _client;
   final String _loginUrl = "https://ogubs1.ogu.edu.tr/giris.aspx";
   final String _sinavSonucUrl = "https://ogubs1.ogu.edu.tr/SinavSonuc.aspx";
   final String _notDokumUrl = "https://ogubs1.ogu.edu.tr/NotDokum.aspx";
+  final String _dersProgramUrl = "https://ogubs1.ogu.edu.tr/DersProgram.aspx";
+  final String _kayitliDerslerUrl = "https://ogubs1.ogu.edu.tr/KayitliDers.aspx";
 
   // Session yönetimi için cookieleri saklayacak bir yapı (Basit bir map)
   // Gerçek bir uygulamada daha gelişmiş bir cookie jar (örn: cookie_jar paketi) kullanılabilir.
@@ -498,6 +502,201 @@ class OgubsService {
       print('fetchSummaryData Hata: $e');
     }
     return {'gpa': null, 'credits': null};
+  }
+
+  Future<List<Course>> fetchSchedule() async {
+    try {
+      final response = await _client
+          .get(Uri.parse(_dersProgramUrl), headers: _getHeaders())
+          .timeout(const Duration(seconds: 15));
+      _updateCookies(response);
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Ders programı sayfası yüklenemedi. Durum Kodu: ${response.statusCode}',
+        );
+      }
+
+      final document = html_parser.parse(response.body);
+      final scheduleTable = document.querySelector('table#gvDersProgram');
+      final List<Course> courses = [];
+
+      if (scheduleTable != null) {
+        final tbody = scheduleTable.querySelector('tbody');
+        if (tbody != null) {
+          final rows = tbody.querySelectorAll('tr');
+          
+          for (final row in rows) {
+            final cells = row.querySelectorAll('td');
+            if (cells.isNotEmpty) {
+              final time = cells[0].text.trim();
+              
+              // Process each day column (1-7: Pazartesi-Pazar)
+              for (int dayIndex = 1; dayIndex < cells.length && dayIndex <= 7; dayIndex++) {
+                final cellContent = cells[dayIndex].text.trim();
+                
+                if (cellContent.isNotEmpty && 
+                    cellContent != '&nbsp;' && 
+                    cellContent != ' ') {
+                  final dayName = _getDayFromIndex(dayIndex);
+                  final courseData = _parseCourseCell(cellContent);
+                  
+                  if (courseData['name']!.isNotEmpty) {
+                    courses.add(
+                      Course(
+                        name: courseData['name']!,
+                        shortName: courseData['shortName']!,
+                        classroom: courseData['classroom']!,
+                        day: dayName,
+                        time: time,
+                      ),
+                    );
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      return courses;
+    } catch (e) {
+      print('fetchSchedule Hata: $e');
+      throw Exception(
+        'Ders programı alınırken bir hata oluştu: ${e.toString()}',
+      );
+    }
+  }
+
+  Map<String, String> _parseCourseCell(String content) {
+    // Parse content like "KİM.MH.TS.I(239)" or "SÜR.KONT.(239)"
+    final RegExp pattern = RegExp(r'^([^(]+)\(([^)]+)\)$');
+    final match = pattern.firstMatch(content);
+    
+    if (match != null) {
+      final shortName = match.group(1)?.trim() ?? '';
+      final classroom = match.group(2)?.trim() ?? '';
+      final fullName = _expandCourseName(shortName);
+      
+      return {
+        'name': fullName,
+        'shortName': shortName,
+        'classroom': classroom,
+      };
+    }
+    
+    return {
+      'name': content,
+      'shortName': content,
+      'classroom': '',
+    };
+  }
+
+  String _expandCourseName(String shortName) {
+    // Course name expansion mappings based on common abbreviations
+    final Map<String, String> courseExpansions = {
+      // Correct mapping: TASARIM I (not matematiksel hesaplamalar)
+      'KİM.MH.TS.I': 'KİMYA MÜHENDİSLİĞİNDE TASARIM I',
+      'KİM.MÜH.BL.U': 'KİMYA MÜHENDİSLİĞİNDE BİLGİSAYAR UYGULAMALARI',
+      'KİM.LB.II': 'KİMYA MÜHENDİSLİĞİ LABORATUVARI II',
+      'KİMTEPMÜHII': 'KİMYASAL TEPKİME MÜHENDİSLİĞİ II',
+      'SÜR.KONT.': 'SÜREÇ KONTROLÜ',
+      'KİM.MÜH.D.T.': 'KİMYA MÜHENDİSLİĞİNDE DENEY TASARIMI',
+      'MÜH.AR.HZ.': 'MÜHENDİSLİK ARAŞTIRMALARINA HAZIRLIK',
+    };
+
+    // Try exact match first
+    if (courseExpansions.containsKey(shortName)) {
+      return courseExpansions[shortName]!;
+    }
+
+    // Try partial matches
+    for (final entry in courseExpansions.entries) {
+      if (shortName.startsWith(entry.key.split('.')[0])) {
+        return entry.value;
+      }
+    }
+
+    // Return original if no expansion found
+    return shortName.replaceAll('.', ' ').trim();
+  }
+
+  String _getDayFromIndex(int index) {
+    switch (index) {
+      case 1:
+        return 'Pazartesi';
+      case 2:
+        return 'Salı';
+      case 3:
+        return 'Çarşamba';
+      case 4:
+        return 'Perşembe';
+      case 5:
+        return 'Cuma';
+      case 6:
+        return 'Cumartesi';
+      case 7:
+        return 'Pazar';
+      default:
+        return 'Bilinmeyen';
+    }
+  }
+
+  Future<List<RegisteredCourse>> fetchRegisteredCourses() async {
+    try {
+      final response = await _client
+          .get(Uri.parse(_kayitliDerslerUrl), headers: _getHeaders())
+          .timeout(const Duration(seconds: 15));
+      _updateCookies(response);
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Kayıtlı dersler sayfası yüklenemedi. Durum Kodu: ${response.statusCode}',
+        );
+      }
+
+      final document = html_parser.parse(response.body);
+      final table = document.querySelector('table#GvBilgi');
+      final List<RegisteredCourse> list = [];
+
+      if (table != null) {
+        final rows = table.querySelectorAll('tbody > tr');
+        for (final row in rows) {
+          final tds = row.querySelectorAll('td');
+          if (tds.length >= 13) {
+            // Indices based on provided HTML
+            final code = tds[2].text.trim();
+            final name = tds[3].text.trim();
+            final classroom = tds[5].text.trim();
+            final subGroup = tds[6].text.trim();
+            final lecturer = tds[7].text.trim();
+            final theory = int.tryParse(tds[9].text.trim()) ?? 0;
+            final practice = int.tryParse(tds[10].text.trim()) ?? 0;
+            final credit = int.tryParse(tds[11].text.trim()) ?? 0;
+            final ects = int.tryParse(tds[12].text.trim()) ?? 0;
+
+            list.add(
+              RegisteredCourse(
+                code: code,
+                name: name,
+                classroom: classroom,
+                subGroup: subGroup,
+                lecturer: lecturer,
+                theory: theory,
+                practice: practice,
+                credit: credit,
+                ects: ects,
+              ),
+            );
+          }
+        }
+      }
+
+      return list;
+    } catch (e) {
+      print('fetchRegisteredCourses Hata: $e');
+      throw Exception('Kayıtlı dersler alınırken hata: ${e.toString()}');
+    }
   }
 
   void clearSessionCookies() {

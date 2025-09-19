@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:ogu_not_sistemi/core/theme/app_colors.dart'; // AppColors import edildi
-import 'package:ogu_not_sistemi/core/theme/app_theme.dart'; // AppTheme import edildi (getGradeColor için)
-import 'package:ogu_not_sistemi/features/grades/data/models/course_grade_model.dart';
+import 'package:ogu_not_sistemi_v2/core/theme/app_colors.dart'; // AppColors import edildi
+import 'package:ogu_not_sistemi_v2/core/theme/app_theme.dart'; // AppTheme import edildi (getGradeColor için)
+import 'package:ogu_not_sistemi_v2/features/grades/data/models/course_grade_model.dart';
 
 // Ham not dizesini ("YAZILI (%35): 100") ayrıştırmak için bir model.
 class _GradeComponent {

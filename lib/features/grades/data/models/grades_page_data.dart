@@ -1,5 +1,5 @@
-import 'package:ogu_not_sistemi/features/grades/data/models/academic_summary_model.dart';
-import 'package:ogu_not_sistemi/features/grades/data/models/course_grade_model.dart';
+import 'package:ogu_not_sistemi_v2/features/grades/data/models/academic_summary_model.dart';
+import 'package:ogu_not_sistemi_v2/features/grades/data/models/course_grade_model.dart';
 
 // Dropdown'lar için genel bir model
 class SelectionOption {

@@ -43,3 +43,38 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Additional Flutter/Development files
+*.g.dart
+*.mocks.dart
+*.config.dart
+
+# Coverage
+coverage/
+test/
+
+# Logs and crash reports
+*.log
+crash_log.txt
+
+# IDE specific files
+.vscode/launch.json
+.vscode/settings.json
+
+# Local environment files
+.env
+.env.local
+.env.*.local
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# APK files (uncomment if you don't want to commit APKs)
+# *.apk
+# *.aab
+
+# Firebase config (if added later)
+# android/app/google-services.json
+# ios/Runner/GoogleService-Info.plist

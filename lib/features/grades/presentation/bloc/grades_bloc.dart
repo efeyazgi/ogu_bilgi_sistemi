@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:ogu_not_sistemi/core/services/ogubs_service.dart';
-import 'package:ogu_not_sistemi/features/grades/data/models/course_grade_model.dart';
-import 'package:ogu_not_sistemi/features/grades/data/models/academic_summary_model.dart';
-import 'package:ogu_not_sistemi/features/grades/data/models/grades_page_data.dart';
+import 'package:ogu_not_sistemi_v2/core/services/ogubs_service.dart';
+import 'package:ogu_not_sistemi_v2/features/grades/data/models/course_grade_model.dart';
+import 'package:ogu_not_sistemi_v2/features/grades/data/models/academic_summary_model.dart';
+import 'package:ogu_not_sistemi_v2/features/grades/data/models/grades_page_data.dart';
 
 part 'grades_event.dart';
 part 'grades_state.dart';

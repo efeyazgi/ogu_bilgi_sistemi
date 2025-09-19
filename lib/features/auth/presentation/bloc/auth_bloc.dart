@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:ogu_not_sistemi/core/services/ogubs_service.dart';
-import 'package:ogu_not_sistemi/core/services/storage_service.dart'; // StorageService import edildi
-import 'package:ogu_not_sistemi/features/auth/data/models/login_page_data.dart';
+import 'package:ogu_not_sistemi_v2/core/services/ogubs_service.dart';
+import 'package:ogu_not_sistemi_v2/core/services/storage_service.dart'; // StorageService import edildi
+import 'package:ogu_not_sistemi_v2/features/auth/data/models/login_page_data.dart';
 
 part 'auth_event.dart';
 part 'auth_state.dart';

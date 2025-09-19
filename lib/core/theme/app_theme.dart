@@ -105,6 +105,51 @@ class AppTheme {
     );
   }
 
+  static ThemeData get darkTheme {
+    final base = ThemeData.dark();
+    return base.copyWith(
+      scaffoldBackgroundColor: const Color(0xFF121212),
+      colorScheme: base.colorScheme.copyWith(
+        primary: AppColors.appBarColor,
+        secondary: Colors.deepPurpleAccent,
+        surface: const Color(0xFF1E1E1E),
+        background: const Color(0xFF121212),
+        onPrimary: Colors.white,
+        onSurface: Colors.white,
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: AppColors.appBarColor,
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
+      textTheme: GoogleFonts.poppinsTextTheme(
+        base.textTheme.apply(bodyColor: Colors.white, displayColor: Colors.white),
+      ),
+      cardTheme: CardThemeData(
+        elevation: 2,
+        color: const Color(0xFF1E1E1E),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: Color(0xFF2C2C2C), width: 1),
+        ),
+      ),
+      inputDecorationTheme: base.inputDecorationTheme.copyWith(
+        filled: true,
+        fillColor: const Color(0xFF1E1E1E),
+        labelStyle: const TextStyle(color: Colors.white70),
+        hintStyle: const TextStyle(color: Colors.white60),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFF3A3A3A)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: AppColors.appBarColor, width: 1.5),
+        ),
+      ),
+    );
+  }
+
   // Kivy'deki font boyutlarına ve stillerine karşılık gelen temel metin teması
   static final TextTheme _textTheme = TextTheme(
     displayLarge: GoogleFonts.poppins(

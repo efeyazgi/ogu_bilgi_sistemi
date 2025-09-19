@@ -1,12 +1,12 @@
 import 'dart:typed_data'; // Uint8List için eklendi
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:ogu_not_sistemi/core/theme/app_colors.dart';
+import 'package:ogu_not_sistemi_v2/core/theme/app_colors.dart';
 import '../widgets/login_form_card.dart';
 import '../widgets/captcha_card.dart';
 import '../bloc/auth_bloc.dart'; // AuthBloc import edildi
-import 'package:ogu_not_sistemi/features/grades/presentation/pages/grades_screen.dart'; // GradesScreen import edildi
-import 'package:ogu_not_sistemi/features/grades/presentation/bloc/grades_bloc.dart'; // GradesBloc import edildi (event göndermek için)
+import 'package:ogu_not_sistemi_v2/features/grades/presentation/pages/main_screen.dart'; // MainScreen import edildi
+import 'package:ogu_not_sistemi_v2/features/grades/presentation/bloc/grades_bloc.dart'; // GradesBloc import edildi (event göndermek için)
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -68,9 +68,9 @@ class _LoginScreenState extends State<LoginScreen> {
         } else if (state is AuthLoginSuccess) {
           // Başarılı giriş sonrası GradesBloc'a notları çekme event'i gönder
           context.read<GradesBloc>().add(LoadInitialGrades());
-          // GradesScreen'e yönlendir ve geri dönüş yolunu kapat
+          // MainScreen'e yönlendir ve geri dönüş yolunu kapat
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const GradesScreen()),
+            MaterialPageRoute(builder: (context) => const MainScreen()),
           );
         } else if (state is AuthFailure) {
           // Hata mesajını SnackBar ile göster

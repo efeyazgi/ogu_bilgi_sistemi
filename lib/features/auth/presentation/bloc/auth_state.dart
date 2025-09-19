@@ -1,7 +1,7 @@
 part of 'auth_bloc.dart';
 
 // import 'package:equatable/equatable.dart'; // Bu satır kaldırılacak, auth_bloc.dart'a taşınacak
-// import 'package:ogu_not_sistemi/features/auth/data/models/login_page_data.dart'; // Bu satır kaldırılacak
+// import 'package:ogu_not_sistemi_v2/features/auth/data/models/login_page_data.dart'; // Bu satır kaldırılacak
 
 abstract class AuthState extends Equatable {
   // Equatable importu auth_bloc.dart'ta olacak

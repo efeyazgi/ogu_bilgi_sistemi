@@ -20,6 +20,7 @@ class LoginFormCard extends StatefulWidget {
 
 class _LoginFormCardState extends State<LoginFormCard> {
   late bool _rememberMe;
+  bool _obscurePassword = true; // Şifre görünürlüğü kontrolü
 
   @override
   void initState() {
@@ -63,8 +64,21 @@ class _LoginFormCardState extends State<LoginFormCard> {
             const SizedBox(height: 8),
             TextField(
               controller: widget.passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(hintText: 'Şifrenizi girin'),
+              obscureText: _obscurePassword,
+              decoration: InputDecoration(
+                hintText: 'Şifrenizi girin',
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                    color: Colors.grey,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                  },
+                ),
+              ),
             ),
             const SizedBox(height: 10),
             Row(

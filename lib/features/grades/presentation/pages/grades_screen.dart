@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:ogu_not_sistemi/core/theme/app_colors.dart';
-import 'package:ogu_not_sistemi/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:ogu_not_sistemi/features/grades/presentation/bloc/grades_bloc.dart';
-import 'package:ogu_not_sistemi/features/grades/presentation/widgets/course_info_card.dart';
-import 'package:ogu_not_sistemi/features/auth/presentation/pages/login_screen.dart';
-import 'package:ogu_not_sistemi/features/grades/data/models/academic_summary_model.dart';
-import 'package:ogu_not_sistemi/features/grades/data/models/grades_page_data.dart';
+import 'package:ogu_not_sistemi_v2/core/theme/app_colors.dart';
+import 'package:ogu_not_sistemi_v2/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:ogu_not_sistemi_v2/features/grades/presentation/bloc/grades_bloc.dart';
+import 'package:ogu_not_sistemi_v2/features/grades/presentation/widgets/course_info_card.dart';
+import 'package:ogu_not_sistemi_v2/features/auth/presentation/pages/login_screen.dart';
+import 'package:ogu_not_sistemi_v2/features/grades/data/models/academic_summary_model.dart';
+import 'package:ogu_not_sistemi_v2/features/schedule/presentation/bloc/schedule_bloc.dart';
 
 class GradesScreen extends StatefulWidget {
   const GradesScreen({super.key});
@@ -32,13 +32,6 @@ class _GradesScreenState extends State<GradesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = context.watch<AuthBloc>().state;
-    String studentName = '...';
-    String studentNumber = '...';
-    if (authState is AuthLoginSuccess) {
-      studentName = authState.username;
-      studentNumber = authState.studentNumber;
-    }
 
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, authState) {
@@ -79,6 +72,7 @@ class _GradesScreenState extends State<GradesScreen> {
               onPressed: () {
                 context.read<AuthBloc>().add(LogoutButtonPressed());
                 context.read<GradesBloc>().add(ClearGrades());
+                context.read<ScheduleBloc>().add(const ClearSchedule());
               },
             ),
           ],
