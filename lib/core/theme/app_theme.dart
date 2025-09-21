@@ -9,7 +9,6 @@ class AppTheme {
       primaryColor: AppColors.appBarColor,
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.appBarColor,
-        background: AppColors.background,
         surface:
             AppColors.cardWhiteBg, // Kartlar ve diyaloglar için yüzey rengi
         onPrimary: AppColors.textLight, // Ana renk üzerindeki metin/ikon rengi
@@ -26,12 +25,12 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.appBarColor,
           foregroundColor: AppColors.textLight,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           textStyle: GoogleFonts.poppins(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
           ),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -113,7 +112,6 @@ class AppTheme {
         primary: AppColors.appBarColor,
         secondary: Colors.deepPurpleAccent,
         surface: const Color(0xFF1E1E1E),
-        background: const Color(0xFF121212),
         onPrimary: Colors.white,
         onSurface: Colors.white,
       ),

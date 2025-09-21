@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ogu_not_sistemi_v2/core/theme/app_colors.dart';
 import 'package:ogu_not_sistemi_v2/core/services/storage_service.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart' show rootBundle, Clipboard, ClipboardData;
 import '../../data/models/course_model.dart';
 import '../../data/models/registered_course.dart';
@@ -82,9 +81,11 @@ class _SchedulePageState extends State<SchedulePage> {
         final normalized = _normalizeLecturer(entry.key.toString());
         mapped[normalized] = entry.value.toString();
       }
-      if (mounted) setState(() => _lecturerEmails
-        ..clear()
-        ..addAll(mapped));
+      if (mounted) {
+        setState(() => _lecturerEmails
+          ..clear()
+          ..addAll(mapped));
+      }
     } catch (_) {
       // JSON okunamadıysa sessiz geç
     }
@@ -241,6 +242,7 @@ class _SchedulePageState extends State<SchedulePage> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ExpansionTile(
         initiallyExpanded: _weeklyExpanded,
+        maintainState: true,
         onExpansionChanged: (v) => setState(() => _weeklyExpanded = v),
         tilePadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         leading: const Icon(Icons.calendar_view_week, color: AppColors.appBarColor),
@@ -285,7 +287,7 @@ class _SchedulePageState extends State<SchedulePage> {
 
     return DataTable(
       border: TableBorder.all(color: Colors.grey.shade300),
-      headingRowColor: MaterialStateProperty.all(AppColors.appBarColor.withOpacity(0.1)),
+      headingRowColor: WidgetStateProperty.all(AppColors.appBarColor.withValues(alpha: 0.1)),
       // Ensure min height is not greater than max height to avoid non-normalized constraints
       dataRowMinHeight: _compactView ? 40 : 48,
       dataRowMaxHeight: _compactView ? 56 : 72,
@@ -383,9 +385,8 @@ class _SchedulePageState extends State<SchedulePage> {
           const SizedBox(height: 2),
           Text(
             course.classroom,
-style: const TextStyle(
+            style: const TextStyle(
               fontSize: 10,
-              color: AppColors.textPrimary,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -412,6 +413,7 @@ style: const TextStyle(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ExpansionTile(
         initiallyExpanded: _listExpanded,
+        maintainState: true,
         onExpansionChanged: (v) => setState(() => _listExpanded = v),
         tilePadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         leading: const Icon(Icons.list, color: AppColors.appBarColor),
@@ -579,7 +581,7 @@ style: const TextStyle(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Ders Bilgileri', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                Text('Ders Bilgileri', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
           Wrap(
             spacing: 16,
@@ -666,16 +668,16 @@ style: const TextStyle(
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Renk', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+        Text('Renk', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
           runSpacing: 8,
           children: _presetColors.map((c) {
-            final selected = c.value == currentColor.value;
+final selected = c.toARGB32() == currentColor.toARGB32();
             return GestureDetector(
               onTap: () async {
-                await context.read<StorageService>().saveCourseColor(normalized, c.value);
+await context.read<StorageService>().saveCourseColor(normalized, c.toARGB32());
                 await _loadSavedColors();
                 if (mounted) setState(() {});
               },
@@ -688,7 +690,7 @@ style: const TextStyle(
                   border: Border.all(color: selected ? AppColors.appBarColor : Colors.white, width: 2.5),
                   boxShadow: [
                     if (selected)
-                      BoxShadow(color: AppColors.appBarColor.withOpacity(0.25), blurRadius: 6, spreadRadius: 0.5),
+                      BoxShadow(color: AppColors.appBarColor.withValues(alpha: 0.25), blurRadius: 6, spreadRadius: 0.5),
                   ],
                 ),
               ),
@@ -800,7 +802,7 @@ style: const TextStyle(
                               contentPadding: EdgeInsets.zero,
                               leading: CircleAvatar(radius: 8, backgroundColor: _colorForCourse(c.name)),
                               title: Text(c.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-subtitle: Text('${c.time}  •  ${c.classroom}', style: const TextStyle(fontSize: 12, color: AppColors.textPrimary)),
+subtitle: Text('${c.time}  •  ${c.classroom}', style: const TextStyle(fontSize: 12)),
                               onTap: () => _openCourseByName(c.name),
                             ))
                         .toList(),

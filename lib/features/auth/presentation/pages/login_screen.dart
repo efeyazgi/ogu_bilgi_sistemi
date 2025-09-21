@@ -198,7 +198,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 return Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: AppColors.statusLabelBg,
+color: Theme.of(context).colorScheme.surfaceContainerHighest,
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   alignment: Alignment.center,
@@ -250,7 +250,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Öğrenci Not Sistemi',
+                      'OGÜ Bilgi Sistemi',
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(
                             color: AppColors.textLight,
@@ -258,9 +258,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                     ),
                     Text(
-                      'ESOGÜ Notlarınızı Görüntüleyin',
+                      'Notlar, Program, Devamsızlık ve GPA tek yerde',
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: AppColors.textLight.withOpacity(0.9),
+                        color: AppColors.textLight.withValues(alpha: 0.9),
                       ),
                     ),
                   ],

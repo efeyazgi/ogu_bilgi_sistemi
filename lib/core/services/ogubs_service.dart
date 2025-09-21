@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as html_parser; // HTML ayrıştırma için
 import 'package:html/dom.dart' as dom; // DOM elementlerine erişim için
+import 'dart:developer' as developer;
 import 'package:ogu_not_sistemi_v2/features/auth/data/models/login_page_data.dart';
 import 'package:ogu_not_sistemi_v2/features/grades/data/models/academic_summary_model.dart';
 import 'package:ogu_not_sistemi_v2/features/grades/data/models/course_grade_model.dart';
@@ -140,13 +141,11 @@ class OgubsService {
           if (captchaResponse.statusCode == 200) {
             captchaBytes = captchaResponse.bodyBytes;
           } else {
-            print(
-              'CAPTCHA resmi indirilemedi. Durum Kodu: ${captchaResponse.statusCode}',
-            );
+            developer.log('CAPTCHA resmi indirilemedi. Durum Kodu: ${captchaResponse.statusCode}');
             // Hata durumu için null bırakılabilir veya özel bir exception atılabilir.
           }
         } catch (e) {
-          print('CAPTCHA resmi indirilirken hata: $e');
+          developer.log('CAPTCHA resmi indirilirken hata: $e');
           // Hata durumu için null bırakılabilir veya özel bir exception atılabilir.
         }
 
@@ -166,7 +165,7 @@ class OgubsService {
     } on TimeoutException {
       throw Exception('Giriş sayfası yüklenirken zaman aşımı oldu.');
     } catch (e) {
-      print('fetchLoginPageData Hata: $e');
+      developer.log('fetchLoginPageData Hata: $e');
       throw Exception(
         'Giriş sayfası verileri alınırken bir hata oluştu: ${e.toString()}',
       );
@@ -281,7 +280,7 @@ class OgubsService {
       // Diğer tüm durumlar başarısız kabul edilir.
       return null;
     } catch (e) {
-      print('Login Hata: $e');
+      developer.log('Login Hata: $e');
       return null; // Hata durumunda null döndür
     }
   }
@@ -348,9 +347,7 @@ class OgubsService {
       final headers = _getHeaders();
 
       if (selectedYear != null && selectedTerm != null) {
-        print(
-          'Yıl ($selectedYear) ve Dönem ($selectedTerm) için notlar çekiliyor...',
-        );
+        developer.log('Yıl ($selectedYear) ve Dönem ($selectedTerm) için notlar çekiliyor...');
         final initialResponse = await _client.get(uri, headers: headers);
         _updateCookies(initialResponse);
 
@@ -392,7 +389,7 @@ class OgubsService {
             .timeout(const Duration(seconds: 20));
         response = await http.Response.fromStream(streamedResponse);
       } else {
-        print('Varsayılan (en son) dönem için notlar çekiliyor...');
+        developer.log('Varsayılan (en son) dönem için notlar çekiliyor...');
         response = await _client
             .get(uri, headers: headers)
             .timeout(const Duration(seconds: 15));
@@ -449,7 +446,7 @@ class OgubsService {
         selectedTerm: _getSelectedOptionValue(document, 'select#dpDonem'),
       );
     } catch (e) {
-      print('fetchGrades Hata: $e');
+      developer.log('fetchGrades Hata: $e');
       throw Exception(
         'Sınav sonuçları alınırken bir hata oluştu: ${e.toString()}',
       );
@@ -499,7 +496,7 @@ class OgubsService {
         }
       }
     } catch (e) {
-      print('fetchSummaryData Hata: $e');
+      developer.log('fetchSummaryData Hata: $e');
     }
     return {'gpa': null, 'credits': null};
   }
@@ -561,7 +558,7 @@ class OgubsService {
       
       return courses;
     } catch (e) {
-      print('fetchSchedule Hata: $e');
+      developer.log('fetchSchedule Hata: $e');
       throw Exception(
         'Ders programı alınırken bir hata oluştu: ${e.toString()}',
       );
@@ -694,13 +691,13 @@ class OgubsService {
 
       return list;
     } catch (e) {
-      print('fetchRegisteredCourses Hata: $e');
+      developer.log('fetchRegisteredCourses Hata: $e');
       throw Exception('Kayıtlı dersler alınırken hata: ${e.toString()}');
     }
   }
 
   void clearSessionCookies() {
     _cookies.clear();
-    print("Session cookies cleared.");
+    developer.log("Session cookies cleared.");
   }
 }

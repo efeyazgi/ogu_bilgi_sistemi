@@ -4,6 +4,7 @@ import 'package:ogu_not_sistemi_v2/core/services/ogubs_service.dart';
 import 'package:ogu_not_sistemi_v2/core/services/storage_service.dart'; // StorageService import edildi
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/pages/login_screen.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/grades/presentation/bloc/grades_bloc.dart';
 import 'features/schedule/presentation/bloc/schedule_bloc.dart';
@@ -52,9 +53,14 @@ class OgubsApp extends StatelessWidget {
         child: MaterialApp(
           title: 'OGU Bilgi Sistemi',
           theme: AppTheme.theme,
-          darkTheme: AppTheme.darkTheme,
-          themeMode: ThemeMode.system,
           debugShowCheckedModeBanner: false,
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [Locale('tr'), Locale('en')],
+          locale: const Locale('tr'),
           home: const LoginScreen(),
         ),
       ),

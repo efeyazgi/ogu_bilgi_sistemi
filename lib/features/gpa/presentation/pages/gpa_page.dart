@@ -112,7 +112,10 @@ class _GpaPageState extends State<GpaPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Önceki Genel Bilgiler', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Text(
+                  'Önceki Genel Bilgiler',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -124,7 +127,7 @@ class _GpaPageState extends State<GpaPage> {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    const Text('Genel ortalamaya ekle'),
+                    Text('Genel ortalamaya ekle', style: Theme.of(context).textTheme.bodyMedium),
                     const SizedBox(width: 8),
                     Switch(value: _includeCumulative, onChanged: (v) => setState(() => _includeCumulative = v)),
                   ],
@@ -136,7 +139,8 @@ class _GpaPageState extends State<GpaPage> {
         Card(
           child: ExpansionTile(
             initiallyExpanded: true,
-            title: const Text('Dersler ve Not Seçimi', style: TextStyle(fontWeight: FontWeight.bold)),
+            maintainState: true,
+            title: Text('Dersler ve Not Seçimi', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -153,7 +157,7 @@ class _GpaPageState extends State<GpaPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Sonuç', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Text('Sonuç', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 Row(children: [
                   _info('Dönem Kredisi', termCredits.toString()),
@@ -162,21 +166,31 @@ class _GpaPageState extends State<GpaPage> {
                 ]),
                 const SizedBox(height: 8),
                 if (_includeCumulative) Row(children: [
-                  _info('Yeni GNO', newCumulative.isNaN ? '0.00' : newCumulative.toStringAsFixed(2)),
+                  Text('Yeni GNO: ', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+                  Text(newCumulative.isNaN ? '0.00' : newCumulative.toStringAsFixed(2), style: const TextStyle(color: AppColors.appBarColor, fontWeight: FontWeight.w800)),
                 ]),
                 const SizedBox(height: 8),
-                const Text('Hızlı Simülasyon', style: TextStyle(fontWeight: FontWeight.w600)),
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 8,
-                  children: _letters.map((l) => OutlinedButton(
-                    onPressed: () {
-                      setState(() {
-                        for (final c in _courses) { _selected[c.code] = l; }
-                      });
-                    },
-                    child: Text('Tümü $l'),
-                  )).toList(),
+                Card(
+                  child: ExpansionTile(
+                    initiallyExpanded: false,
+                    title: const Text('Hızlı Simülasyon', style: TextStyle(fontWeight: FontWeight.w600)),
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        child: Wrap(
+                          spacing: 8,
+                          children: _letters.map((l) => OutlinedButton(
+                            onPressed: () {
+                              setState(() {
+                                for (final c in _courses) { _selected[c.code] = l; }
+                              });
+                            },
+                            child: Text('Tümü $l'),
+                          )).toList(),
+                        ),
+                      ),
+                    ],
+                  ),
                 )
               ],
             ),
@@ -199,12 +213,16 @@ class _GpaPageState extends State<GpaPage> {
                 // Uzun ders adlarını iki satırla ve elipsis ile göster.
                 Text(
                   c.name,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
-                Text('Kredi: ${c.credit}', style: const TextStyle(color: AppColors.textPrimary)),
+                Text('Kredi: ${c.credit}', style: Theme.of(context).textTheme.bodyMedium),
+                if (c.lecturer.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text('Öğr. Gör.: ${c.lecturer}', style: Theme.of(context).textTheme.bodySmall),
+                ],
               ],
             ),
           ),
@@ -233,8 +251,8 @@ class _GpaPageState extends State<GpaPage> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('$label: ', style: const TextStyle(fontWeight: FontWeight.w600)),
-        Text(value),
+        Text('$label: ', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+        Text(value, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
       ],
     );
   }

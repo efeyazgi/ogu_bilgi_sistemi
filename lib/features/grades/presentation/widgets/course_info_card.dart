@@ -93,7 +93,7 @@ class CourseInfoCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 6.0),
               child: Text(
                 c.grade,
-                style: style.copyWith(fontWeight: FontWeight.bold),
+                style: style.copyWith(fontWeight: FontWeight.w700),
               ),
             ),
           ),
@@ -121,7 +121,7 @@ class CourseInfoCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12.0),
         side: BorderSide(
-          color: AppColors.cardBorder.withOpacity(0.6),
+color: AppColors.cardBorder.withValues(alpha: 0.6),
           width: 1,
         ),
       ),
@@ -152,7 +152,7 @@ class CourseInfoCard extends StatelessWidget {
           vertical: 12,
         ),
         iconColor: AppColors.appBarColor,
-        collapsedIconColor: AppColors.textPrimary,
+collapsedIconColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
         children: [
           Padding(
             padding: const EdgeInsets.only(bottom: 8.0),
@@ -170,7 +170,7 @@ class CourseInfoCard extends StatelessWidget {
               ],
             ),
           ),
-          const Divider(height: 12),
+          const Divider(height: 12, thickness: 1),
           Table(
             columnWidths: const {
               0: FlexColumnWidth(3), // Etiket (örn: Final)
@@ -180,7 +180,7 @@ class CourseInfoCard extends StatelessWidget {
             },
             children: [
               TableRow(
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   border: Border(
                     bottom: BorderSide(color: AppColors.cardBorder, width: 1.5),
                   ),

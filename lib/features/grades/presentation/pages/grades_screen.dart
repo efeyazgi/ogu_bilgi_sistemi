@@ -7,6 +7,7 @@ import 'package:ogu_not_sistemi_v2/features/grades/presentation/widgets/course_i
 import 'package:ogu_not_sistemi_v2/features/auth/presentation/pages/login_screen.dart';
 import 'package:ogu_not_sistemi_v2/features/grades/data/models/academic_summary_model.dart';
 import 'package:ogu_not_sistemi_v2/features/schedule/presentation/bloc/schedule_bloc.dart';
+import 'package:ogu_not_sistemi_v2/core/services/storage_service.dart';
 
 class GradesScreen extends StatefulWidget {
   const GradesScreen({super.key});
@@ -192,9 +193,28 @@ class _GradesScreenState extends State<GradesScreen> {
           ),
         ),
         if (state.courses.isEmpty)
-          const SliverFillRemaining(
+          SliverFillRemaining(
+            hasScrollBody: false,
             child: Center(
-              child: Text('Bu dönem için ders notu bulunmamaktadır.'),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppColors.appBarColor.withValues(alpha: 0.10),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.warning_amber_rounded, size: 56, color: AppColors.appBarColor),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Bu dönem için ders notu bulunmamaktadır.',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700, color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
             ),
           )
         else
@@ -223,58 +243,71 @@ class _GradesScreenState extends State<GradesScreen> {
     if (summary.isEmpty && !hasUserData) return const SizedBox.shrink();
 
     return Container(
-      padding: const EdgeInsets.all(20.0),
+      padding: const EdgeInsets.all(16.0),
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       decoration: BoxDecoration(
-        color: AppColors.notesHeaderBg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.cardBorder.withOpacity(0.5)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2))],
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (hasUserData) ...[
-            RichText(
-              text: TextSpan(
-                style: Theme.of(context).textTheme.bodyLarge,
-                children: [
-                  const TextSpan(
-                    text: 'Öğrenci Adı: ',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  TextSpan(text: username),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+if (hasUserData) ...[
+                  Builder(builder: (context) {
+final name = username as String;
+                    return Text(name, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700));
+                  }),
+                  const SizedBox(height: 2),
+                  Builder(builder: (context) {
+final no = studentNumber as String;
+                    return Text('Öğrenci No: $no', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary));
+                  }),
                 ],
-              ),
+              ],
             ),
-            const SizedBox(height: 8),
-            RichText(
-              text: TextSpan(
-                style: Theme.of(context).textTheme.bodyLarge,
-                children: [
-                  const TextSpan(
-                    text: 'Öğrenci Numarası: ',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (summary.gpa != null)
+                RichText(
+                  text: TextSpan(
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+                    children: [
+                      const TextSpan(text: 'GNO: '),
+                      TextSpan(text: '${summary.gpa}', style: const TextStyle(color: AppColors.appBarColor, fontWeight: FontWeight.w700)),
+                    ],
                   ),
-                  TextSpan(text: studentNumber),
-                ],
+                ),
+              FutureBuilder<int>(
+                future: context.read<StorageService>().loadGraduationCredits(),
+                builder: (ctx, snap) {
+                  final grad = snap.data ?? 160;
+                  final earned = summary.credits ?? 0;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      const SizedBox(height: 4),
+                      RichText(
+                        text: TextSpan(
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+                          children: [
+                            const TextSpan(text: 'Kredi: '),
+                            TextSpan(text: '$earned/$grad', style: const TextStyle(color: AppColors.appBarColor, fontWeight: FontWeight.w700)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
-            ),
-            if (summary.isNotEmpty) const Divider(height: 24),
-          ],
-          if (summary.gpa != null)
-            Text(
-              "GNO: ${summary.gpa}",
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-            ),
-          if (summary.gpa != null && summary.credits != null)
-            const SizedBox(height: 5),
-          if (summary.credits != null)
-            Text(
-              "Başarılan Kredi: ${summary.credits}",
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
+            ],
+          ),
         ],
       ),
     );
