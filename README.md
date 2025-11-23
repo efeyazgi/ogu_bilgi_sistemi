@@ -12,16 +12,14 @@
 
 ### ✨ Özellikler
 
-- 🔐 **Güvenli Giriş**: ESOGÜ öğrenci bilgileri ile güvenli giriş, CAPTCHA desteği
-- 📊 **Notlar**: Dönemlik dersler, detayda bileşen tablosu; GNO ile renklendirme
-- 📅 **Ders Programı**: Haftalık tablo, sade/tam görünüm, ders bilgi alt sayfası
-- ⏰ **Devamsızlık**: Slot (gün/saat) bazlı takip, takvimden geçmiş/uygun gün seçimi, toplu kaydetme ve onay
-- 🧮 **GPA Hesaplama**: Dönemsel ve kümülatif hesaplama, senaryo seçimi
-- ⚙️ **Ayarlar**: Geliştirici bilgisi, Mezuniyet Kredisi girişi + Kaydet butonu (kalıcı)
-- 🇹🇷 **Yerelleştirme**: Türkçe içerik ve takvim
-- 🌓 **Tema**: Sadece aydınlık (light) tema; kurumsal mor ana renk
-- 📱 **Responsive Tasarım**: Telefon ve tablet uyumlu
-- 🔄 **Otomatik Yenileme**: Verileri hızlı güncelleme
+- 🔐 **Güvenli Giriş**: ESOGÜ öğrenci bilgileri ile güvenli giriş
+- 📊 **Not Görüntüleme**: Dönemlik ve genel not durumu görüntüleme
+- 📅 **Ders Programı**: Haftalık ders programını görüntüleme
+- 🧮 **GPA Hesaplama**: Otomatik GPA (Not Ortalaması) hesaplama
+- 💾 **Offline Çalışma**: İnternet bağlantısı olmadan da önceki verilerinizi görüntüleyin
+- 🌙 **Dark/Light Mode**: Sistem temasına uyumlu otomatik tema desteği
+- 📱 **Responsive Tasarım**: Telefon ve tablet uyumlu responsive tasarım
+- 🔄 **Otomatik Yenileme**: Verilerinizi güncel tutmak için otomatik yenileme
 
 ### 🎯 Ana Fonksiyonlar
 
@@ -109,7 +107,6 @@ lib/
 │   │       ├── pages/
 │   │       └── widgets/
 │   ├── schedule/              # Ders programı
-│   ├── attendance/            # Devamsızlık modülü (data + presentation)
 │   └── gpa/                   # GPA hesaplama
 └── main.dart                  # Ana uygulama giriş noktası
 
@@ -174,10 +171,10 @@ assets/
 
 Uygulama, modern material design ilkelerine uygun olarak tasarlanmıştır:
 
-- **Renk Paleti**: ESOGÜ kurumsal renkleri (mor ana renk)
+- **Renk Paleti**: ESOGÜ kurumsal renkleri
 - **Tipografi**: Poppins font ailesi
 - **Layout**: Responsive ve kullanıcı dostu
-- **Tema**: Yalnızca aydınlık (light) tema
+- **Dark Mode**: Sistem teması desteği
 
 ## 🔧 Konfigürasyon
 
@@ -307,23 +304,13 @@ git clone https://github.com/efeyazgi/ogu_bilgi_sistemi.git
 
 ## 📈 Versiyon Geçmişi
 
-### v1.1.0
-- Tema: Karanlık mod kaldırıldı; sade, aydınlık tema ve kurumsal mor ana renk
-- Yerelleştirme: Türkçe içerik/takvim
-- Alt bar: Emoji + siyah etiketler, yüksek kontrast
-- Ayarlar: Geliştirici kartı; Mezuniyet Kredisi girişi + Kaydet butonu; kalıcı kayıt düzeltildi
-- Notlar: Özet kartında Kredi (alınan/mezuniyet), tablo ve renklendirme iyileştirmeleri
-- Devamsızlık: Slot bazlı mantık, takvimde yalnız uygun günler; toplu işaretleme + Kaydet onayı; geçmiş listeleme, tek tıkla saat düzeltme ve uzun basışla kaldırma; kart metinleri ve kalan hak düzeltmesi
-- Hata/UX: CalendarDatePicker initialDate assert düzeltildi; FAB hero çakışması çözüldü; alt sayfa taşmaları engellendi
-- Performans: Bazı oluşturucular sabitlendi, formatlayıcılar paylaşıldı, ExpansionTile durumları korunuyor
-
 ### v1.0.0 (İlk Sürüm)
-- ESOGÜ entegrasyonu
-- Not görüntüleme sistemi
-- Ders programı modülü
-- GPA hesaplama
-- Modern UI/UX
-- Offline çalışma desteği
+- ✅ ESOGÜ entegrasyonu
+- ✅ Not görüntüleme sistemi
+- ✅ Ders programı modülü
+- ✅ GPA hesaplama
+- ✅ Modern UI/UX
+- ✅ Offline çalışma desteği
 
 ---
 

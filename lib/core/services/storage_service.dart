@@ -1,6 +1,4 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/material.dart';
-import 'dart:developer' as developer;
 
 class StorageService {
   static const String _studentNumberKey = 'student_number';
@@ -9,14 +7,12 @@ class StorageService {
   // Gerçek bir uygulamada flutter_secure_storage gibi bir paket kullanılmalıdır.
 
   static const String _courseColorsKey = 'course_colors_v1';
-  static const String _themeModeKey = 'theme_mode_v1';
-  static const String _gradCreditsKey = 'graduation_credits_v1';
 
   Future<void> saveCredentials(String studentNumber, String password) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_studentNumberKey, studentNumber);
     await prefs.setString(_passwordKey, password);
-    developer.log('Credentials saved.');
+    print('Credentials saved.');
   }
 
   Future<Map<String, String>?> loadCredentials() async {
@@ -25,10 +21,10 @@ class StorageService {
     final password = prefs.getString(_passwordKey);
 
     if (studentNumber != null && password != null) {
-      developer.log('Credentials loaded: $studentNumber');
+      print('Credentials loaded: $studentNumber');
       return {'studentNumber': studentNumber, 'password': password};
     }
-    developer.log('No credentials found.');
+    print('No credentials found.');
     return null;
   }
 
@@ -36,7 +32,7 @@ class StorageService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_studentNumberKey);
     await prefs.remove(_passwordKey);
-    developer.log('Credentials deleted.');
+    print('Credentials deleted.');
   }
 
   // Ders renkleri (isim -> ARGB int) saklama/okuma
@@ -68,40 +64,12 @@ class StorageService {
     await prefs.setString(_courseColorsKey, json);
   }
 
-  Future<void> saveThemeMode(ThemeMode mode) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_themeModeKey, mode.name);
-  }
-
-  Future<ThemeMode> loadThemeMode() async {
-    final prefs = await SharedPreferences.getInstance();
-    final v = prefs.getString(_themeModeKey);
-    switch (v) {
-      case 'dark':
-        return ThemeMode.dark;
-      case 'light':
-        return ThemeMode.light;
-      default:
-        return ThemeMode.system;
-    }
-  }
-
-  Future<void> saveGraduationCredits(int credits) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_gradCreditsKey, credits);
-  }
-
-  Future<int> loadGraduationCredits() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt(_gradCreditsKey) ?? 160;
-  }
-
   // Basit JSON encode/decode (dart:convert yerine min bağımlılık)
   String _encode(Map<String, int> map) {
     final entries = map.entries
         .map((e) => '"${e.key.replaceAll("\"", "\\\"")}":${e.value}')
         .join(',');
-    return '{$entries}';
+    return '{' + entries + '}';
   }
 
   Map<String, dynamic> _decode(String json) {

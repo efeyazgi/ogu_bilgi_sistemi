@@ -15,7 +15,7 @@ class AttendancePage extends StatefulWidget {
 }
 
 class _AttendancePageState extends State<AttendancePage> {
-  final _repo = AttendanceRepository();
+  late final AttendanceRepository _repo;
   List<AttendanceCourse> _courses = [];
   Map<String, int> _used = {}; // code -> used slots
   int _weeks = 14;
@@ -38,6 +38,9 @@ class _AttendancePageState extends State<AttendancePage> {
   @override
   void initState() {
     super.initState();
+    final ogubs = context.read<OgubsService>();
+    final userId = ogubs.currentStudentNumber ?? 'default_user';
+    _repo = AttendanceRepository(userId);
     _load();
   }
 
@@ -331,7 +334,39 @@ class _AttendancePageState extends State<AttendancePage> {
 
   Widget _buildBody() {
     if (_loading) return const Center(child: CircularProgressIndicator());
-    if (_error != null) return Center(child: Text('Hata: $_error'));
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Hata: $_error', textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            ElevatedButton(onPressed: _load, child: const Text('Tekrar Dene')),
+          ],
+        ),
+      );
+    }
+
+    if (_courses.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.class_outlined, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            const Text('Ders bulunamadı.', style: TextStyle(fontSize: 18, color: Colors.grey)),
+            const SizedBox(height: 8),
+            const Text('Ders programı veya kayıtlı dersler alınamamış olabilir.', style: TextStyle(color: Colors.grey)),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _load,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Yenile'),
+            ),
+          ],
+        ),
+      );
+    }
 
     final bottomInset = MediaQuery.of(context).padding.bottom;
     return ListView.builder(
@@ -456,6 +491,13 @@ class _AttendanceDetailPageState extends State<AttendanceDetailPage> {
   DateTime _nearestAllowedInitialDate(Set<int> allowedWeekdays) {
     final now = DateTime.now();
     var d = _date;
+    
+    // Eğer allowedWeekdays boşsa (manuel ders), her gün seçilebilir, o yüzden direkt d veya now döndür.
+    if (allowedWeekdays.isEmpty) {
+       if (d.isAfter(now)) return DateTime(now.year, now.month, now.day);
+       return DateTime(d.year, d.month, d.day);
+    }
+
     if (d.isAfter(now) || !allowedWeekdays.contains(d.weekday)) {
       d = now;
       // Maksimum 7 adım geri gitmek yeterlidir (haftanın tüm günleri).
@@ -549,15 +591,33 @@ class _AttendanceDetailPageState extends State<AttendanceDetailPage> {
     }
   }
 
-  bool _isMarked(String time, DateTime d) {
-    final keyDate = _ymd.format(d);
-    return _entries.any((e) => e.courseCode == widget.course.code && e.date == keyDate && e.time == time);
-  }
+  Future<void> _addManualEntry() async {
+    // Manuel ekleme için saat seçimi
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: const TimeOfDay(hour: 9, minute: 0),
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+          child: child!,
+        );
+      },
+    );
+    if (picked == null) return;
 
-  Future<void> _toggle(String time, DateTime d) async {
-    final keyDate = _ymd.format(d);
-    await widget.repo.toggleEntry(widget.course.code, keyDate, time);
+    final timeStr = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+    final keyDate = _ymd.format(_date);
+    
+    // Zaten var mı?
+    final exists = _entries.any((e) => e.courseCode == widget.course.code && e.date == keyDate && e.time == timeStr);
+    if (exists) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bu saatte zaten kayıt var.')));
+      return;
+    }
+
+    await widget.repo.toggleEntry(widget.course.code, keyDate, timeStr);
     await _load();
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Kayıt eklendi.')));
   }
 
   Future<void> _openCourseThreshold() async {
@@ -609,6 +669,10 @@ class _AttendanceDetailPageState extends State<AttendanceDetailPage> {
   Widget build(BuildContext context) {
     final dayDow = _date.weekday; // 1..7
     final daySlots = widget.course.weeklySlots.where((s) => s.dayOfWeek == dayDow).toList()..sort((a,b) => a.time.compareTo(b.time));
+    
+    // Manuel eklenenleri de bu listede gösterelim (eğer slotlarda yoksa)
+    final keyDate = _ymd.format(_date);
+    final manualEntriesForDay = _entries.where((e) => e.date == keyDate && !daySlots.any((s) => s.time == e.time)).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -642,6 +706,7 @@ class _AttendanceDetailPageState extends State<AttendanceDetailPage> {
                       lastDate: DateTime.now(),
                       initialDate: init,
                       selectableDayPredicate: (day) {
+                        if (allowed.isEmpty) return !day.isAfter(DateTime.now());
                         return !day.isAfter(DateTime.now()) && allowed.contains(day.weekday);
                       },
                       onDateChanged: (d) {
@@ -660,51 +725,92 @@ class _AttendanceDetailPageState extends State<AttendanceDetailPage> {
               maintainState: true,
               title: const Text('Bugünün Slotları', style: TextStyle(fontWeight: FontWeight.bold)),
               children: [
-                if (daySlots.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Text('Seçilen günde bu ders için slot yok.'),
-                  )
-                else ...daySlots.map((s) {
-                  final marked = _localMarked[s.time] ?? false;
-                  return SwitchListTile(
-                    title: Text('${s.time}  •  ${s.classroom}'),
-                    subtitle: const Text('Gitmedim olarak işaretle'),
-                    value: marked,
-                    onChanged: (_) => _toggleLocal(s.time),
-                  );
-                }),
-                if (daySlots.isNotEmpty)
+                if (daySlots.isEmpty && manualEntriesForDay.isEmpty)
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: Row(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
                       children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              for (final s in daySlots) {
-                                _localMarked[s.time] = true;
-                              }
-                              setState(() {});
-                            },
-                            icon: const Icon(Icons.event_busy),
-                            label: const Text('Bu gündeki tüm slotları işaretle'),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
+                        const Text('Seçilen günde bu ders için programda slot yok.'),
+                        const SizedBox(height: 8),
                         ElevatedButton.icon(
-                          onPressed: _saveForDay,
-                          icon: const Icon(Icons.save),
-                          label: const Text('Kaydet'),
+                          onPressed: _addManualEntry,
+                          icon: const Icon(Icons.add),
+                          label: const Text('Manuel Ekle'),
                         ),
                       ],
                     ),
-                  ),
+                  )
+                else ...[
+                   // Programdaki slotlar
+                   ...daySlots.map((s) {
+                    final marked = _localMarked[s.time] ?? false;
+                    return SwitchListTile(
+                      title: Text('${s.time}  •  ${s.classroom}'),
+                      subtitle: const Text('Gitmedim olarak işaretle'),
+                      value: marked,
+                      onChanged: (_) => _toggleLocal(s.time),
+                    );
+                  }),
+                  // Manuel eklenenler
+                  if (manualEntriesForDay.isNotEmpty) ...[
+                    const Divider(),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Text('Manuel Eklenenler', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                    ),
+                    ...manualEntriesForDay.map((e) => ListTile(
+                      leading: const Icon(Icons.edit_calendar, color: Colors.orange),
+                      title: Text('${e.time}'),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () async {
+                          await widget.repo.toggleEntry(widget.course.code, e.date, e.time);
+                          await _load();
+                        },
+                      ),
+                    )),
+                  ],
+                  if (daySlots.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                for (final s in daySlots) {
+                                  _localMarked[s.time] = true;
+                                }
+                                setState(() {});
+                              },
+                              icon: const Icon(Icons.event_busy),
+                              label: const Text('Tümünü Seç'),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          ElevatedButton.icon(
+                            onPressed: _saveForDay,
+                            icon: const Icon(Icons.save),
+                            label: const Text('Kaydet'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (daySlots.isNotEmpty)
+                     Padding(
+                       padding: const EdgeInsets.only(bottom: 16.0),
+                       child: TextButton.icon(
+                         onPressed: _addManualEntry,
+                         icon: const Icon(Icons.add),
+                         label: const Text('Program Dışı Saat Ekle'),
+                       ),
+                     ),
+                ],
               ],
             ),
           ),
         ],
       ),
     );
-}
+  }
 }

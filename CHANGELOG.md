@@ -5,30 +5,16 @@ Bu dosya, projedeki tüm önemli değişiklikleri belgeler.
 Format [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) standardına dayanmaktadır,
 ve bu proje [Semantic Versioning](https://semver.org/spec/v2.0.0.html) kullanmaktadır.
 
-## [1.1.0] - 2025-09-21
+## [Unreleased]
 
-### Changed
-- Tema yalnızca aydınlık (light) olacak şekilde sadeleştirildi
-- Alt gezinme çubuğu: emoji + siyah etiketler
-- Ayarlar sayfası: Mezuniyet Kredisi girişi kalıcı hale getirildi, Kaydet butonu eklendi
-- Notlar özetinde kredi gösterimi (alınan/mezuniyet) iyileştirildi
-
-### Added
-- Devamsızlık modülüne genişletilmiş akış:
-  - Takvimde yalnızca uygun ve geçmiş günler seçilebilir
-  - Günün slotlarını toplu işaretleme
-  - Kaydetmeden önce onay diyalogu
-  - Ders kartına dokununca geçmiş devamsızlık listesi
-  - Tek tıkla saat düzeltme, uzun basışla silme
-
-### Fixed
-- CalendarDatePicker `initialDate` assert hatası giderildi
-- FAB heroTag çakışması çözüldü
-- Alt sayfa taşmaları için scrollable yapı
-
-### Performance
-- Tarih formatlayıcıları paylaştırıldı, gereksiz rebuild azaltıldı
-- ExpansionTile `maintainState` ile durum korunuyor
+### Planning
+- iOS platform desteği
+- Web platform desteği  
+- Push notifications
+- Dark theme toggle
+- Biometric authentication
+- Semester GPA comparison
+- Course performance analytics
 
 ## [1.0.0] - 2025-09-20
 

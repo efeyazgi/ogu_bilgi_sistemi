@@ -5,15 +5,9 @@ allprojects {
     }
 }
 
-val newBuildDir: Directory = rootProject.layout.buildDirectory.dir("../../build").get()
-rootProject.layout.buildDirectory.value(newBuildDir)
-
+rootProject.buildDir = File(rootDir, "../build")
 subprojects {
-    val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
-    project.layout.buildDirectory.value(newSubprojectBuildDir)
-}
-subprojects {
-    project.evaluationDependsOn(":app")
+    project.buildDir = File(rootDir, "../build/${project.name}")
 }
 
 tasks.register<Delete>("clean") {

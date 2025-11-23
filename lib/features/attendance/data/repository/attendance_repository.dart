@@ -4,9 +4,13 @@ import 'package:ogu_not_sistemi_v2/core/services/ogubs_service.dart';
 import '../../data/models/attendance_models.dart';
 
 class AttendanceRepository {
-  static const _coursesKey = 'attendance_courses_v1';
-  static const _entriesKey = 'attendance_entries_v1';
-  static const _settingsKey = 'attendance_settings_v1';
+  final String userId;
+
+  AttendanceRepository(this.userId);
+
+  String get _coursesKey => 'attendance_courses_v1_$userId';
+  String get _entriesKey => 'attendance_entries_v1_$userId';
+  String get _settingsKey => 'attendance_settings_v1_$userId';
 
   Future<Map<String, dynamic>> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
@@ -65,8 +69,11 @@ class AttendanceRepository {
 
   // Build courses from schedule + registered
   Future<List<AttendanceCourse>> buildCoursesFromRemote(OgubsService ogubs) async {
+    print('AttendanceRepository: Fetching schedule and registered courses...');
     final schedule = await ogubs.fetchSchedule();
+    print('AttendanceRepository: Schedule fetched. Count: ${schedule.length}');
     final regs = await ogubs.fetchRegisteredCourses();
+    print('AttendanceRepository: Registered courses fetched. Count: ${regs.length}');
 
     String normalize(String s) => s
         .toUpperCase()
@@ -86,15 +93,36 @@ class AttendanceRepository {
       final dow = _dowFromName(s.day);
       final slot = WeeklySlot(dayOfWeek: dow, time: s.time, classroom: s.classroom);
       (byName[n] ??= []).add(slot);
+      print('AttendanceRepository: Schedule Key: "$n"');
     }
 
     final list = <AttendanceCourse>[];
     for (final r in regs) {
       final n = normalize(r.name);
-      final slots = byName[n] ?? [];
-      if (slots.isEmpty) continue; // sadece programda görünenler
+      print('AttendanceRepository: Checking registered course: "$n"');
+      
+      List<WeeklySlot>? slots = byName[n];
+      
+      // Fallback: Fuzzy match
+      if (slots == null) {
+        // Try to find a key that contains the registered name or vice versa
+        final matchKey = byName.keys.firstWhere(
+          (k) => k.contains(n) || n.contains(k),
+          orElse: () => '',
+        );
+        if (matchKey.isNotEmpty) {
+           print('AttendanceRepository: Fuzzy match found: "$n" ~= "$matchKey"');
+           slots = byName[matchKey];
+        }
+      }
+
+      if (slots == null || slots.isEmpty) {
+        print('AttendanceRepository: No slots found for "$n". Adding as manual course.');
+        slots = [];
+      }
       list.add(AttendanceCourse(code: r.code, name: r.name, thresholdRatio: 0.30, weeklySlots: slots));
     }
+    print('AttendanceRepository: Final course list count: ${list.length}');
     await saveCourses(list);
     return list;
   }

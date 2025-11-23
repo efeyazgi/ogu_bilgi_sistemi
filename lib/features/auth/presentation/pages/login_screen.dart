@@ -7,6 +7,7 @@ import '../widgets/captcha_card.dart';
 import '../bloc/auth_bloc.dart'; // AuthBloc import edildi
 import 'package:ogu_not_sistemi_v2/features/grades/presentation/pages/main_screen.dart'; // MainScreen import edildi
 import 'package:ogu_not_sistemi_v2/features/grades/presentation/bloc/grades_bloc.dart'; // GradesBloc import edildi (event göndermek için)
+import '../../../cafeteria/presentation/pages/cafeteria_menu_screen.dart'; // CafeteriaMenuScreen import edildi
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -170,6 +171,18 @@ class _LoginScreenState extends State<LoginScreen> {
                               onPressed: _onLoginButtonPressed,
                               child: const Text('Giriş Yap'),
                             ),
+                            const SizedBox(height: 10),
+                            TextButton.icon(
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => const CafeteriaMenuScreen(),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.restaurant_menu),
+                              label: const Text('Yemekhane Menüsü'),
+                            ),
                             const SizedBox(height: 15),
                             BlocBuilder<AuthBloc, AuthState>(
                               builder: (context, state) {
@@ -198,7 +211,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 return Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                    color: AppColors.statusLabelBg,
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   alignment: Alignment.center,
@@ -250,7 +263,7 @@ color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'OGÜ Bilgi Sistemi',
+                      'Öğrenci Not Sistemi',
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(
                             color: AppColors.textLight,
@@ -258,9 +271,9 @@ color: Theme.of(context).colorScheme.surfaceContainerHighest,
                           ),
                     ),
                     Text(
-                      'Notlar, Program, Devamsızlık ve GPA tek yerde',
+                      'ESOGÜ Notlarınızı Görüntüleyin',
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: AppColors.textLight.withValues(alpha: 0.9),
+                        color: AppColors.textLight.withOpacity(0.9),
                       ),
                     ),
                   ],

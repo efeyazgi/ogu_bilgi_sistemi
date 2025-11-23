@@ -18,7 +18,7 @@ class SchedulePage extends StatefulWidget {
 class _SchedulePageState extends State<SchedulePage> {
   bool _weeklyExpanded = true;
   bool _todayExpanded = true;
-  bool _listExpanded = true;
+  bool _listExpanded = false; // Default to collapsed to focus on schedule
   bool _compactView = false; // Sade/Tam görünüm
   Map<String, int> _savedColorMap = {}; // normalizedName -> ARGB
   final List<Color> _presetColors = const [
@@ -63,6 +63,7 @@ class _SchedulePageState extends State<SchedulePage> {
     'MURAT DOGRU': 'mdogru@ogu.edu.tr',
     'BERAY ALYAKUT': 'beray.alyakut@ogu.edu.tr',
   }; // normalizedName -> email
+
   @override
   void initState() {
     super.initState();
@@ -81,11 +82,7 @@ class _SchedulePageState extends State<SchedulePage> {
         final normalized = _normalizeLecturer(entry.key.toString());
         mapped[normalized] = entry.value.toString();
       }
-      if (mounted) {
-        setState(() => _lecturerEmails
-          ..clear()
-          ..addAll(mapped));
-      }
+      if (mounted) setState(() => _lecturerEmails.addAll(mapped));
     } catch (_) {
       // JSON okunamadıysa sessiz geç
     }
@@ -102,6 +99,7 @@ class _SchedulePageState extends State<SchedulePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         leading: Padding(
           padding: const EdgeInsets.only(left: 16.0),
@@ -113,10 +111,11 @@ class _SchedulePageState extends State<SchedulePage> {
         ),
         title: const Text(
           "Ders Programı",
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         backgroundColor: AppColors.appBarColor,
+        elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
@@ -144,7 +143,7 @@ class _SchedulePageState extends State<SchedulePage> {
                   SizedBox(height: 16),
                   Text(
                     'Ders programı yükleniyor...',
-                    style: TextStyle(fontSize: 16),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                   ),
                 ],
               ),
@@ -152,7 +151,7 @@ class _SchedulePageState extends State<SchedulePage> {
           } else if (state is ScheduleFailure) {
             return Center(
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(24.0),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -163,19 +162,30 @@ class _SchedulePageState extends State<SchedulePage> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Hata:\n${state.message}',
+                      'Hata Oluştu',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppColors.gradeRed),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      state.message,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                        color: AppColors.gradeRed,
+                        color: Colors.black87,
                         fontSize: 16,
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
+                    const SizedBox(height: 24),
+                    ElevatedButton.icon(
                       onPressed: () {
                         context.read<ScheduleBloc>().add(const LoadSchedule());
                       },
-                      child: const Text('Tekrar Dene'),
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Tekrar Dene'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.appBarColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      ),
                     ),
                   ],
                 ),
@@ -183,21 +193,22 @@ class _SchedulePageState extends State<SchedulePage> {
             );
           } else if (state is ScheduleLoaded) {
             if (state.courses.isEmpty) {
-              return const Center(
+              return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      Icons.schedule,
-                      size: 64,
-                      color: Colors.grey,
+                      Icons.calendar_today_outlined,
+                      size: 80,
+                      color: Colors.grey.shade400,
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     Text(
                       'Ders programınız bulunamadı.',
                       style: TextStyle(
                         fontSize: 18,
-                        color: Colors.grey,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -223,13 +234,14 @@ class _SchedulePageState extends State<SchedulePage> {
 
   Widget _buildScheduleView(List<Course> courses) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(12.0),
+      padding: const EdgeInsets.all(16.0),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _buildTodayCard(courses),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           _buildWeeklyScheduleCard(courses),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           _buildCourseListCard(courses, (context.read<ScheduleBloc>().state as ScheduleLoaded).registeredCourses),
         ],
       ),
@@ -238,31 +250,42 @@ class _SchedulePageState extends State<SchedulePage> {
 
   Widget _buildWeeklyScheduleCard(List<Course> courses) {
     return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ExpansionTile(
-        initiallyExpanded: _weeklyExpanded,
-        maintainState: true,
-        onExpansionChanged: (v) => setState(() => _weeklyExpanded = v),
-        tilePadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-        leading: const Icon(Icons.calendar_view_week, color: AppColors.appBarColor),
-        title: const Text(
-          'Haftalık Program',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppColors.appBarColor,
+      elevation: 2,
+      shadowColor: Colors.black12,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: Colors.white,
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: _weeklyExpanded,
+          onExpansionChanged: (v) => setState(() => _weeklyExpanded = v),
+          tilePadding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.appBarColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.calendar_view_week, color: AppColors.appBarColor),
           ),
-        ),
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: _buildScheduleTable(courses),
+          title: const Text(
+            'Haftalık Program',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
             ),
           ),
-        ],
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: _buildScheduleTable(courses),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -285,47 +308,58 @@ class _SchedulePageState extends State<SchedulePage> {
     
     const days = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
 
-    return DataTable(
-      border: TableBorder.all(color: Colors.grey.shade300),
-      headingRowColor: WidgetStateProperty.all(AppColors.appBarColor.withValues(alpha: 0.1)),
-      // Ensure min height is not greater than max height to avoid non-normalized constraints
-      dataRowMinHeight: _compactView ? 40 : 48,
-      dataRowMaxHeight: _compactView ? 56 : 72,
-      columns: [
-        const DataColumn(
-          label: Text(
-            'Saat',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: DataTable(
+        headingRowColor: MaterialStateProperty.all(Colors.grey.shade50),
+        dataRowColor: MaterialStateProperty.all(Colors.white),
+        columnSpacing: 20,
+        horizontalMargin: 16,
+        border: TableBorder(
+          horizontalInside: BorderSide(color: Colors.grey.shade200),
+          verticalInside: BorderSide(color: Colors.grey.shade200),
         ),
-        ...days.map((day) => DataColumn(
-          label: Text(
-            _abbrevDay(day),
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-        )),
-      ],
-      rows: sortedTimes.map((time) {
-        return DataRow(
-          cells: [
-            DataCell(
-              Text(
-                time,
-                style: const TextStyle(fontWeight: FontWeight.w500),
-              ),
+        dataRowMinHeight: _compactView ? 48 : 60,
+        dataRowMaxHeight: _compactView ? 64 : 80,
+        columns: [
+          const DataColumn(
+            label: Text(
+              'Saat',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
             ),
-            ...days.map((day) {
-              final course = schedule[time]?[day];
-              return DataCell(
-                _buildCourseCell(course),
-                onTap: course == null
-                    ? null
-                    : () => _openCourseByName(course.name),
-              );
-            }),
-          ],
-        );
-      }).toList(),
+          ),
+          ...days.map((day) => DataColumn(
+            label: Text(
+              _abbrevDay(day),
+              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+            ),
+          )),
+        ],
+        rows: sortedTimes.map((time) {
+          return DataRow(
+            cells: [
+              DataCell(
+                Text(
+                  time,
+                  style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black54),
+                ),
+              ),
+              ...days.map((day) {
+                final course = schedule[time]?[day];
+                return DataCell(
+                  _buildCourseCell(course),
+                  onTap: course == null
+                      ? null
+                      : () => _openCourseByName(course.name),
+                );
+              }),
+            ],
+          );
+        }).toList(),
+      ),
     );
   }
 
@@ -336,7 +370,7 @@ class _SchedulePageState extends State<SchedulePage> {
         child: Center(
           child: Text(
             '-',
-            style: TextStyle(color: Colors.grey),
+            style: TextStyle(color: Colors.black12, fontSize: 20),
           ),
         ),
       );
@@ -347,13 +381,14 @@ class _SchedulePageState extends State<SchedulePage> {
     if (_compactView) {
       // Sade görünüm: renkli nokta + kısa ad
       return Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-          const SizedBox(width: 4),
+          Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          const SizedBox(width: 6),
           Expanded(
             child: Text(
               course.shortName,
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black87),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -364,12 +399,16 @@ class _SchedulePageState extends State<SchedulePage> {
 
     // Tam görünüm
     return Container(
+      width: 120, // Fixed width for better table layout
       decoration: BoxDecoration(
-        border: Border(left: BorderSide(color: color, width: 3)),
+        color: color.withOpacity(0.1),
+        border: Border(left: BorderSide(color: color, width: 4)),
+        borderRadius: const BorderRadius.only(topRight: Radius.circular(4), bottomRight: Radius.circular(4)),
       ),
-      padding: const EdgeInsets.only(left: 6, top: 2, bottom: 2, right: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
@@ -377,7 +416,7 @@ class _SchedulePageState extends State<SchedulePage> {
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.bold,
-              color: color,
+              color: color.withOpacity(1.0), // Ensure text is readable
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -385,8 +424,10 @@ class _SchedulePageState extends State<SchedulePage> {
           const SizedBox(height: 2),
           Text(
             course.classroom,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 10,
+              color: Colors.black87.withOpacity(0.7),
+              fontWeight: FontWeight.w500,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -409,32 +450,43 @@ class _SchedulePageState extends State<SchedulePage> {
 
   Widget _buildCourseListCard(List<Course> courses, List<RegisteredCourse> registered) {
     return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ExpansionTile(
-        initiallyExpanded: _listExpanded,
-        maintainState: true,
-        onExpansionChanged: (v) => setState(() => _listExpanded = v),
-        tilePadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-        leading: const Icon(Icons.list, color: AppColors.appBarColor),
-        title: const Text(
-          'Ders Listesi',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppColors.appBarColor,
+      elevation: 2,
+      shadowColor: Colors.black12,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: Colors.white,
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: _listExpanded,
+          onExpansionChanged: (v) => setState(() => _listExpanded = v),
+          tilePadding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.appBarColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.list_alt, color: AppColors.appBarColor),
           ),
-        ),
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _buildCourseChips(courses, registered),
+          title: const Text(
+            'Tüm Dersler',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
             ),
           ),
-        ],
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+              child: Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: _buildCourseChips(courses, registered),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -452,25 +504,31 @@ class _SchedulePageState extends State<SchedulePage> {
       final scheduleList = e.value;
       final normalized = _normalize(name);
       final reg = regByNormalized[normalized];
+      final color = _colorForCourse(name);
 
       final maxWidth = MediaQuery.of(context).size.width - 64;
-      return Tooltip(
-        message: name,
-        child: ActionChip(
-          label: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: maxWidth),
-            child: Text(
-              name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: AppColors.appBarColor, fontWeight: FontWeight.w600, fontSize: 12),
-            ),
+      return ActionChip(
+        elevation: 0,
+        pressElevation: 2,
+        backgroundColor: Colors.white,
+        side: BorderSide(color: color.withOpacity(0.3)),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+        label: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          child: Text(
+            name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600, fontSize: 13),
           ),
-          avatar: const Icon(Icons.info_outline, color: AppColors.appBarColor, size: 18),
-          onPressed: () => _showCourseDetails(context, name, scheduleList, reg),
-          backgroundColor: Colors.grey.shade100,
-          shape: StadiumBorder(side: BorderSide(color: Colors.grey.shade300)),
         ),
+        avatar: CircleAvatar(
+          backgroundColor: color,
+          radius: 10,
+          child: const Icon(Icons.info_outline, color: Colors.white, size: 12),
+        ),
+        onPressed: () => _showCourseDetails(context, name, scheduleList, reg),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       );
     }).toList();
   }
@@ -487,62 +545,93 @@ class _SchedulePageState extends State<SchedulePage> {
   void _showCourseDetails(BuildContext context, String name, List<Course> scheduleList, RegisteredCourse? reg) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (ctx) {
-        // Group schedule by day
         final byDay = <String, List<Course>>{};
         for (final c in scheduleList) {
           (byDay[c.day] ??= []).add(c);
         }
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.menu_book, color: AppColors.appBarColor),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        name,
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.appBarColor),
-                      ),
-                    ),
-                  ],
+        
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-                const SizedBox(height: 12),
-                if (reg != null) _buildCreditsSection(reg),
-                if (reg != null) ...[
-                  const SizedBox(height: 12),
-                  _buildColorPicker(name),
-                ],
-                const SizedBox(height: 12),
-                const Text('Ders Saatleri', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 8),
-                ...byDay.entries.map((entry) {
-                  final day = entry.key;
-                  final times = entry.value.map((c) => '${c.time} (${c.classroom})').join(', ');
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4.0),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(
-                          width: 100,
-                          child: Text(day, style: const TextStyle(fontWeight: FontWeight.w500)),
-                        ),
-                        Expanded(child: Text(times)),
-                      ],
+              ),
+              const SizedBox(height: 24),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: _colorForCourse(name).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                  );
-                }),
+                    child: Icon(Icons.menu_book, color: _colorForCourse(name), size: 28),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      name,
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              if (reg != null) _buildCreditsSection(reg),
+              if (reg != null) ...[
+                const SizedBox(height: 20),
+                _buildColorPicker(name),
               ],
-            ),
+              const SizedBox(height: 24),
+              const Text('Ders Saatleri', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+              const SizedBox(height: 12),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: byDay.entries.map((entry) {
+                    final day = entry.key;
+                    final times = entry.value.map((c) => '${c.time} (${c.classroom})').join(', ');
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6.0),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 100,
+                            child: Text(day, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black87)),
+                          ),
+                          Expanded(child: Text(times, style: const TextStyle(color: Colors.black54))),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
           ),
         );
       },
@@ -551,112 +640,104 @@ class _SchedulePageState extends State<SchedulePage> {
 
   String _abbrevDay(String day) {
     switch (day) {
-      case 'Pazartesi':
-        return 'Paz';
-      case 'Salı':
-        return 'Sal';
-      case 'Çarşamba':
-        return 'Çar';
-      case 'Perşembe':
-        return 'Per';
-      case 'Cuma':
-        return 'Cum';
-      case 'Cumartesi':
-        return 'Cmt';
-      case 'Pazar':
-        return 'Paz';
-      default:
-        return day;
+      case 'Pazartesi': return 'Paz';
+      case 'Salı': return 'Sal';
+      case 'Çarşamba': return 'Çar';
+      case 'Perşembe': return 'Per';
+      case 'Cuma': return 'Cum';
+      case 'Cumartesi': return 'Cmt';
+      case 'Pazar': return 'Paz';
+      default: return day;
     }
   }
 
   Widget _buildCreditsSection(RegisteredCourse reg) {
+    final email = _lecturerEmails[_normalizeLecturer(reg.lecturer)];
+    final hasEmail = email != null && email.isNotEmpty;
+
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade300),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-                Text('Ders Bilgileri', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-          const SizedBox(height: 8),
+          const Text('Ders Bilgileri', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87)),
+          const SizedBox(height: 12),
           Wrap(
-            spacing: 16,
+            spacing: 8,
             runSpacing: 8,
             children: [
               _infoChip('Kod', reg.code),
-              _infoChip('Teori', reg.theory.toString()),
-              _infoChip('Uygulama', reg.practice.toString()),
               _infoChip('Kredi', reg.credit.toString()),
               _infoChip('AKTS', reg.ects.toString()),
               _infoChip('Şube', reg.subGroup),
             ],
           ),
-          const SizedBox(height: 8),
-          Row(children: [
-            const Icon(Icons.person, size: 18, color: AppColors.appBarColor),
-            const SizedBox(width: 6),
-            Expanded(
-              child: GestureDetector(
-                onTap: () async {
-                  final email = _lecturerEmails[_normalizeLecturer(reg.lecturer)] ?? '';
-                  if (email.isEmpty) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Bu öğretim üyesi için e-posta kaydı bulunamadı.'),
-                          backgroundColor: Colors.orange,
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    }
-                    return;
-                  }
-                  
-                  // E-posta adresini panoya kopyala
-                  try {
+          const SizedBox(height: 16),
+          const Divider(),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: AppColors.appBarColor.withOpacity(0.1),
+                radius: 20,
+                child: const Icon(Icons.person, size: 20, color: AppColors.appBarColor),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Öğretim Üyesi", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    Text(
+                      reg.lecturer,
+                      style: const TextStyle(
+                        color: Colors.black87,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (hasEmail)
+                IconButton(
+                  onPressed: () async {
                     await Clipboard.setData(ClipboardData(text: email));
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('E-posta adresi kopyalandı: $email'),
-                          backgroundColor: Colors.green,
-                          duration: const Duration(seconds: 3),
-                          action: SnackBarAction(
-                            label: 'TAMAM',
-                            textColor: Colors.white,
-                            onPressed: () {},
+                          content: Row(
+                            children: [
+                              const Icon(Icons.check_circle, color: Colors.white),
+                              const SizedBox(width: 12),
+                              Expanded(child: Text('E-posta kopyalandı:\n$email')),
+                            ],
                           ),
+                          backgroundColor: Colors.green.shade600,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          duration: const Duration(seconds: 3),
                         ),
                       );
                     }
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('E-posta kopyalanamadı'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    }
-                  }
-                },
-                child: Text(
-                  reg.lecturer,
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w600,
-                    decoration: (_lecturerEmails[_normalizeLecturer(reg.lecturer)] ?? '').isNotEmpty
-                        ? TextDecoration.underline
-                        : TextDecoration.none,
+                  },
+                  icon: const Icon(Icons.copy, color: AppColors.appBarColor),
+                  tooltip: 'E-postayı Kopyala',
+                  style: IconButton.styleFrom(
+                    backgroundColor: AppColors.appBarColor.withOpacity(0.1),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                 ),
-              ),
-            ),
-          ]),
+            ],
+          ),
         ],
       ),
     );
@@ -668,51 +749,52 @@ class _SchedulePageState extends State<SchedulePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Renk', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-        const SizedBox(height: 8),
+        const Text('Ders Rengi', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87)),
+        const SizedBox(height: 12),
         Wrap(
-          spacing: 8,
-          runSpacing: 8,
+          spacing: 12,
+          runSpacing: 12,
           children: _presetColors.map((c) {
-final selected = c.toARGB32() == currentColor.toARGB32();
+            final selected = c.value == currentColor.value;
             return GestureDetector(
               onTap: () async {
-await context.read<StorageService>().saveCourseColor(normalized, c.toARGB32());
+                await context.read<StorageService>().saveCourseColor(normalized, c.value);
                 await _loadSavedColors();
                 if (mounted) setState(() {});
               },
-              child: Container(
-                width: 30,
-                height: 30,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
                   color: c,
                   shape: BoxShape.circle,
-                  border: Border.all(color: selected ? AppColors.appBarColor : Colors.white, width: 2.5),
+                  border: Border.all(
+                    color: selected ? AppColors.appBarColor : Colors.transparent, 
+                    width: selected ? 3 : 0
+                  ),
                   boxShadow: [
-                    if (selected)
-                      BoxShadow(color: AppColors.appBarColor.withValues(alpha: 0.25), blurRadius: 6, spreadRadius: 0.5),
+                    BoxShadow(color: c.withOpacity(0.4), blurRadius: 6, offset: const Offset(0, 2)),
                   ],
                 ),
+                child: selected ? const Icon(Icons.check, color: Colors.white, size: 20) : null,
               ),
             );
           }).toList(),
         ),
-        const SizedBox(height: 8),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton.icon(
-            onPressed: () async {
-              await context.read<StorageService>().removeCourseColor(normalized);
-              await _loadSavedColors();
-              if (mounted) setState(() {});
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.appBarColor,
-              textStyle: const TextStyle(fontWeight: FontWeight.w700),
-            ),
-            icon: const Icon(Icons.restore_outlined),
-            label: const Text('Rengi Sıfırla'),
+        const SizedBox(height: 12),
+        TextButton.icon(
+          onPressed: () async {
+            await context.read<StorageService>().removeCourseColor(normalized);
+            await _loadSavedColors();
+            if (mounted) setState(() {});
+          },
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.grey.shade700,
+            textStyle: const TextStyle(fontWeight: FontWeight.w600),
           ),
+          icon: const Icon(Icons.restore),
+          label: const Text('Varsayılan Renge Dön'),
         ),
       ],
     );
@@ -720,18 +802,19 @@ await context.read<StorageService>().saveCourseColor(normalized, c.toARGB32());
 
   Widget _infoChip(String label, String value) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        color: Colors.grey.shade100,
         border: Border.all(color: Colors.grey.shade300),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('$label: ', style: const TextStyle(fontWeight: FontWeight.w600)),
-          Text(value),
-        ],
+      child: RichText(
+        text: TextSpan(
+          children: [
+            TextSpan(text: '$label: ', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey.shade700, fontSize: 12)),
+            TextSpan(text: value, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87, fontSize: 13)),
+          ],
+        ),
       ),
     );
   }
@@ -772,43 +855,112 @@ await context.read<StorageService>().saveCourseColor(normalized, c.toARGB32());
       ..sort((a, b) => a.time.compareTo(b.time));
 
     return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ExpansionTile(
-        initiallyExpanded: _todayExpanded,
-        onExpansionChanged: (v) => setState(() => _todayExpanded = v),
-        tilePadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-        leading: const Icon(Icons.today, color: AppColors.appBarColor),
-        title: Text(
-          'Bugünün Dersleri (${_abbrevDay(dayName)})',
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppColors.appBarColor,
+      elevation: 2,
+      shadowColor: Colors.black12,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: Colors.white,
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: _todayExpanded,
+          onExpansionChanged: (v) => setState(() => _todayExpanded = v),
+          tilePadding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.appBarColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.today, color: AppColors.appBarColor),
           ),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Bugünün Dersleri',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              Text(
+                _abbrevDay(dayName),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              child: todays.isEmpty
+                  ? Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.event_available, color: Colors.grey.shade400),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Bugün dersiniz bulunmamaktadır.',
+                            style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
+                    )
+                  : Column(
+                      children: todays.map((c) {
+                        final color = _colorForCourse(c.name);
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.shade200),
+                            boxShadow: [
+                              BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2)),
+                            ],
+                          ),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            leading: Container(
+                              width: 4,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: color,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                            title: Text(
+                              c.name,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                            ),
+                            subtitle: Row(
+                              children: [
+                                Icon(Icons.access_time, size: 14, color: Colors.grey.shade600),
+                                const SizedBox(width: 4),
+                                Text(c.time, style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
+                                const SizedBox(width: 16),
+                                Icon(Icons.location_on_outlined, size: 14, color: Colors.grey.shade600),
+                                const SizedBox(width: 4),
+                                Text(c.classroom, style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
+                              ],
+                            ),
+                            onTap: () => _openCourseByName(c.name),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+            ),
+          ],
         ),
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: todays.isEmpty
-                ? const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text('Bugün dersiniz bulunmamaktadır.'),
-                  )
-                : Column(
-                    children: todays
-                        .map((c) => ListTile(
-                              dense: true,
-                              contentPadding: EdgeInsets.zero,
-                              leading: CircleAvatar(radius: 8, backgroundColor: _colorForCourse(c.name)),
-                              title: Text(c.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-subtitle: Text('${c.time}  •  ${c.classroom}', style: const TextStyle(fontSize: 12)),
-                              onTap: () => _openCourseByName(c.name),
-                            ))
-                        .toList(),
-                  ),
-          ),
-        ],
       ),
     );
   }

@@ -3,13 +3,13 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as html_parser; // HTML ayrıştırma için
 import 'package:html/dom.dart' as dom; // DOM elementlerine erişim için
-import 'dart:developer' as developer;
 import 'package:ogu_not_sistemi_v2/features/auth/data/models/login_page_data.dart';
 import 'package:ogu_not_sistemi_v2/features/grades/data/models/academic_summary_model.dart';
 import 'package:ogu_not_sistemi_v2/features/grades/data/models/course_grade_model.dart';
 import 'package:ogu_not_sistemi_v2/features/grades/data/models/grades_page_data.dart';
 import 'package:ogu_not_sistemi_v2/features/schedule/data/models/course_model.dart';
 import 'package:ogu_not_sistemi_v2/features/schedule/data/models/registered_course.dart';
+import 'package:ogu_not_sistemi_v2/features/grades/data/models/grade_details_model.dart';
 
 class OgubsService {
   final http.Client _client;
@@ -20,7 +20,6 @@ class OgubsService {
   final String _kayitliDerslerUrl = "https://ogubs1.ogu.edu.tr/KayitliDers.aspx";
 
   // Session yönetimi için cookieleri saklayacak bir yapı (Basit bir map)
-  // Gerçek bir uygulamada daha gelişmiş bir cookie jar (örn: cookie_jar paketi) kullanılabilir.
   final Map<String, String> _cookies = {};
 
   OgubsService({http.Client? client}) : _client = client ?? http.Client();
@@ -30,7 +29,6 @@ class OgubsService {
     final headers = {
       'User-Agent':
           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-      // Diğer gerekli headerlar buraya eklenebilir
     };
     if (_cookies.isNotEmpty) {
       headers['Cookie'] = _cookies.entries
@@ -44,8 +42,6 @@ class OgubsService {
   void _updateCookies(http.Response response) {
     String? rawCookie = response.headers['set-cookie'];
     if (rawCookie != null) {
-      // Basit cookie ayrıştırma, birden fazla cookie ve path/domain gibi detayları işlemez.
-      // Örnek: ASP.NET_SessionId=xyz; path=/; HttpOnly
       var cookies = rawCookie.split(',');
       for (var cookieString in cookies) {
         var parts = cookieString.split(';');
@@ -63,7 +59,7 @@ class OgubsService {
     try {
       final response = await _client
           .get(Uri.parse(_loginUrl), headers: _getHeaders())
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 30));
 
       _updateCookies(response); // Session cookie'sini al
 
@@ -97,11 +93,7 @@ class OgubsService {
         String fullCaptchaUrl;
 
         if (captchaRelativeUrl.startsWith("../")) {
-          // Örn: ../../images/kappi.aspx -> https://ogubs1.ogu.edu.tr/images/kappi.aspx
-          // Bu kısım Kivy kodundaki mantığa göre daha dikkatli ele alınmalı.
-          // LOGIN_URL'in base'ini alıp birleştirelim.
           Uri loginUri = Uri.parse(_loginUrl);
-          // ../ sayısına göre path segmentlerini çıkar
           int parentCount = captchaRelativeUrl.split("../").length - 1;
           List<String> pathSegments = List.from(loginUri.pathSegments);
           if (pathSegments.isNotEmpty && pathSegments.last.endsWith('.aspx')) {
@@ -114,13 +106,10 @@ class OgubsService {
           fullCaptchaUrl =
               "${loginUri.scheme}://${loginUri.host}/$basePath/${captchaRelativeUrl.replaceAll("../", "")}";
         } else if (captchaRelativeUrl.startsWith("/")) {
-          // Örn: /Kullanici/kappi.aspx -> https://ogubs1.ogu.edu.tr/Kullanici/kappi.aspx
           Uri loginUri = Uri.parse(_loginUrl);
           fullCaptchaUrl =
               "${loginUri.scheme}://${loginUri.host}$captchaRelativeUrl";
         } else {
-          // Örn: kappi.aspx -> https://ogubs1.ogu.edu.tr/kappi.aspx (Eğer giris.aspx ile aynı dizindeyse)
-          // Bu durum için Kivy'deki gibi LOGIN_URL'in son segmentini değiştirerek URL oluşturulabilir.
           fullCaptchaUrl = Uri.parse(
             _loginUrl,
           ).resolve(captchaRelativeUrl).toString();
@@ -130,31 +119,27 @@ class OgubsService {
           final captchaResponse = await _client
               .get(
                 Uri.parse(fullCaptchaUrl),
-                headers:
-                    _getHeaders(), // Session cookie'sini CAPTCHA isteğinde de gönder
+                headers: _getHeaders(),
               )
               .timeout(const Duration(seconds: 10));
-          _updateCookies(
-            captchaResponse,
-          ); // CAPTCHA sonrası yeni cookie gelebilir
+          _updateCookies(captchaResponse);
 
           if (captchaResponse.statusCode == 200) {
             captchaBytes = captchaResponse.bodyBytes;
           } else {
-            developer.log('CAPTCHA resmi indirilemedi. Durum Kodu: ${captchaResponse.statusCode}');
-            // Hata durumu için null bırakılabilir veya özel bir exception atılabilir.
+            print(
+              'CAPTCHA resmi indirilemedi. Durum Kodu: ${captchaResponse.statusCode}',
+            );
           }
         } catch (e) {
-          developer.log('CAPTCHA resmi indirilirken hata: $e');
-          // Hata durumu için null bırakılabilir veya özel bir exception atılabilir.
+          print('CAPTCHA resmi indirilirken hata: $e');
         }
 
         return LoginPageData(
           viewState: viewState,
           viewStateGenerator: viewStateGenerator,
           eventValidation: eventValidation,
-          captchaRelativeUrl:
-              captchaRelativeUrl, // Orijinal relative URL'i saklayalım
+          captchaRelativeUrl: captchaRelativeUrl,
           captchaImageBytes: captchaBytes,
         );
       } else {
@@ -165,19 +150,23 @@ class OgubsService {
     } on TimeoutException {
       throw Exception('Giriş sayfası yüklenirken zaman aşımı oldu.');
     } catch (e) {
-      developer.log('fetchLoginPageData Hata: $e');
+      print('fetchLoginPageData Hata: $e');
       throw Exception(
         'Giriş sayfası verileri alınırken bir hata oluştu: ${e.toString()}',
       );
     }
   }
 
+  String? _currentStudentNumber;
+  String? get currentStudentNumber => _currentStudentNumber;
+
   Future<Map<String, String>?> login({
     required String studentNumber,
     required String password,
     required String captcha,
-    required LoginPageData loginPageData, // __VIEWSTATE vb. içerir
+    required LoginPageData loginPageData,
   }) async {
+    _currentStudentNumber = studentNumber; // Store student number
     final loginPayload = {
       '__VIEWSTATE': loginPageData.viewState,
       '__VIEWSTATEGENERATOR': loginPageData.viewStateGenerator,
@@ -191,8 +180,7 @@ class OgubsService {
     try {
       final request = http.Request('POST', Uri.parse(_loginUrl))
         ..headers.addAll(_getHeaders())
-        ..followRedirects =
-            false // Yönlendirmeleri manuel takip et
+        ..followRedirects = false
         ..bodyFields = loginPayload;
 
       final streamedResponse = await _client
@@ -200,13 +188,12 @@ class OgubsService {
           .timeout(const Duration(seconds: 15));
       final response = await http.Response.fromStream(streamedResponse);
 
-      _updateCookies(response); // Giriş sonrası yeni cookieler gelebilir
+      _updateCookies(response);
 
       if (response.statusCode == 302) {
         final location = response.headers['location'];
         if (location != null &&
             location.toLowerCase().contains('/anasayfa.aspx')) {
-          // Yönlendirme başarılı. Ana sayfaya gidip kullanıcı bilgilerini al.
           final homePageResponse = await _client.get(
             Uri.parse("https://ogubs1.ogu.edu.tr$location"),
             headers: _getHeaders(),
@@ -217,10 +204,7 @@ class OgubsService {
             final document = html_parser.parse(homePageResponse.body);
             final welcomeLabel = document.querySelector('span#lbKullanici');
             if (welcomeLabel != null) {
-              // Örnek: "Hoş Geldiniz: 151620221049 EFE YAZGI"
               final studentInfoText = welcomeLabel.text.split(':').last.trim();
-
-              // Numarayı ve ismi ayırmak için daha güvenilir bir yöntem
               final studentNumberMatch = RegExp(
                 r'^(\d+)',
               ).firstMatch(studentInfoText);
@@ -237,21 +221,13 @@ class OgubsService {
               }
             }
           }
-          // Bilgiler ayrıştırılamazsa veya ana sayfa yüklenemezse bile
-          // giriş başarılı kabul edilebilir ama bilgiler eksik olur.
-          // Bu durumu ele almak için null yerine varsayılan bir değer döndürülebilir
-          // veya hata fırlatılabilir. Şimdilik null dönüyoruz.
           return null;
         }
-      }
-      // Bazı durumlarda yönlendirme olmadan da başarılı olabilir (AJAX sonrası gibi)
-      else if (response.statusCode == 200) {
+      } else if (response.statusCode == 200) {
         final document = html_parser.parse(response.body);
-
-        // Hata mesajı var mı kontrol et
         final errorLabel = document.getElementById('lblHata');
         if (errorLabel != null && errorLabel.text.isNotEmpty) {
-          return null; // Hata mesajı varsa giriş başarısızdır.
+          return null;
         }
 
         final welcomeLabel = document.querySelector('span#lbKullanici');
@@ -272,23 +248,15 @@ class OgubsService {
             };
           }
         }
-
-        // Eğer hiçbir bilgi bulunamazsa ve hata da yoksa, muhtemelen giriş ekranındayızdır.
         return null;
       }
-
-      // Diğer tüm durumlar başarısız kabul edilir.
       return null;
     } catch (e) {
-      developer.log('Login Hata: $e');
-      return null; // Hata durumunda null döndür
+      print('Login Hata: $e');
+      return null;
     }
   }
 
-  // Sınav sonuçlarını çekmek için
-  // final String _sinavSonucUrl = "https://ogubs1.ogu.edu.tr/SinavSonuc.aspx";
-
-  // Kivy'deki parse_sinav_hucre metodunun Dart karşılığı
   String _parseSinavHucre(dom.Element? hucreSoup) {
     if (hucreSoup == null) return "Veri Yok";
 
@@ -306,23 +274,24 @@ class OgubsService {
             final notValBTag = notTag.querySelector('b');
             final notVal = (notValBTag?.text ?? notTag.text).trim();
             final cleanNotVal = notVal.replaceAll("\xa0", "").trim();
-
+            
+            String component = "";
             if (isim.isNotEmpty && cleanNotVal.isNotEmpty) {
-              bilesenler.add("$isim $cleanNotVal");
+              component = "$isim $cleanNotVal";
             } else if (isim.isNotEmpty) {
-              bilesenler.add(isim);
+              component = isim;
+            }
+            
+            // Extract URL
+            final href = notTag.attributes['href'];
+            if (href != null && href.isNotEmpty) {
+              component += "|$href";
+            }
+            
+            if (component.isNotEmpty) {
+              bilesenler.add(component);
             }
           }
-        }
-      }
-    }
-
-    if (bilesenler.isEmpty) {
-      final links = hucreSoup.querySelectorAll('a.normaltext');
-      for (final linkTag in links) {
-        final text = linkTag.text.trim().replaceAll("\xa0", "").trim();
-        if (text.isNotEmpty) {
-          bilesenler.add(text);
         }
       }
     }
@@ -347,7 +316,9 @@ class OgubsService {
       final headers = _getHeaders();
 
       if (selectedYear != null && selectedTerm != null) {
-        developer.log('Yıl ($selectedYear) ve Dönem ($selectedTerm) için notlar çekiliyor...');
+        print(
+          'Yıl ($selectedYear) ve Dönem ($selectedTerm) için notlar çekiliyor...',
+        );
         final initialResponse = await _client.get(uri, headers: headers);
         _updateCookies(initialResponse);
 
@@ -389,7 +360,7 @@ class OgubsService {
             .timeout(const Duration(seconds: 20));
         response = await http.Response.fromStream(streamedResponse);
       } else {
-        developer.log('Varsayılan (en son) dönem için notlar çekiliyor...');
+        print('Varsayılan (en son) dönem için notlar çekiliyor...');
         response = await _client
             .get(uri, headers: headers)
             .timeout(const Duration(seconds: 15));
@@ -414,6 +385,15 @@ class OgubsService {
               .where((node) => node.localName == 'td')
               .cast<dom.Element>()
               .toList();
+          
+          // Debug: Print column content to find instructor
+          print('Row $i Columns: ${cols.length}');
+          for (int k = 0; k < cols.length; k++) {
+             print('Col $k Text: "${cols[k].text.trim()}"');
+             // print('Col $k HTML: "${cols[k].innerHtml}"'); // Commented out to reduce noise
+             print('Col $k Attributes: ${cols[k].attributes}');
+          }
+          
           if (cols.length != 9) continue;
 
           dersDataList.add(
@@ -433,7 +413,6 @@ class OgubsService {
 
       final summaryData = await fetchSummaryData();
 
-      // Yıl seçeneklerini değere (value) göre sırala (eskiden yeniye)
       final yearOptions = _parseSelectOptions(document, 'select#dpYariyil');
       yearOptions.sort((a, b) => a.value.compareTo(b.value));
 
@@ -446,7 +425,7 @@ class OgubsService {
         selectedTerm: _getSelectedOptionValue(document, 'select#dpDonem'),
       );
     } catch (e) {
-      developer.log('fetchGrades Hata: $e');
+      print('fetchGrades Hata: $e');
       throw Exception(
         'Sınav sonuçları alınırken bir hata oluştu: ${e.toString()}',
       );
@@ -482,23 +461,37 @@ class OgubsService {
           .timeout(const Duration(seconds: 10));
       _updateCookies(response);
 
-      if (response.statusCode == 200) {
+    if (response.statusCode == 200) {
         final document = html_parser.parse(response.body);
         final summarySpan = document.querySelector('span#lbAnadalGpa');
+        final aktsSpan = document.querySelector('span#LbAnadalAkts');
+        
+        String? gpa;
+        String? credits;
+        String? akts;
+
         if (summarySpan != null) {
           final fullText = summarySpan.text.trim();
           final gpaMatch = RegExp(r'GNO:\s*([\d,]+)').firstMatch(fullText);
           final creditsMatch = RegExp(r'Kredi:\s*(\d+)').firstMatch(fullText);
-          return {
-            'gpa': gpaMatch?.group(1)?.replaceAll(',', '.'),
-            'credits': creditsMatch?.group(1),
-          };
+          gpa = gpaMatch?.group(1)?.replaceAll(',', '.');
+          credits = creditsMatch?.group(1);
         }
+
+        if (aktsSpan != null) {
+          akts = aktsSpan.text.trim();
+        }
+
+        return {
+          'gpa': gpa,
+          'credits': credits,
+          'akts': akts,
+        };
       }
     } catch (e) {
-      developer.log('fetchSummaryData Hata: $e');
+      print('fetchSummaryData Hata: $e');
     }
-    return {'gpa': null, 'credits': null};
+    return {'gpa': null, 'credits': null, 'akts': null};
   }
 
   Future<List<Course>> fetchSchedule() async {
@@ -519,24 +512,26 @@ class OgubsService {
       final List<Course> courses = [];
 
       if (scheduleTable != null) {
+        print('fetchSchedule: Table found.');
         final tbody = scheduleTable.querySelector('tbody');
         if (tbody != null) {
           final rows = tbody.querySelectorAll('tr');
+          print('fetchSchedule: Found ${rows.length} rows.');
           
           for (final row in rows) {
             final cells = row.querySelectorAll('td');
             if (cells.isNotEmpty) {
               final time = cells[0].text.trim();
+              // print('fetchSchedule: Row time: $time');
               
-              // Process each day column (1-7: Pazartesi-Pazar)
               for (int dayIndex = 1; dayIndex < cells.length && dayIndex <= 7; dayIndex++) {
-                final cellContent = cells[dayIndex].text.trim();
+                String cellContent = cells[dayIndex].text.replaceAll('\u00A0', ' ').trim();
                 
-                if (cellContent.isNotEmpty && 
-                    cellContent != '&nbsp;' && 
-                    cellContent != ' ') {
+                if (cellContent.isNotEmpty && cellContent != '&nbsp;') {
+                  print('fetchSchedule: Found content at day $dayIndex, time $time: "$cellContent"');
                   final dayName = _getDayFromIndex(dayIndex);
                   final courseData = _parseCourseCell(cellContent);
+                  print('fetchSchedule: Parsed course data: $courseData');
                   
                   if (courseData['name']!.isNotEmpty) {
                     courses.add(
@@ -554,11 +549,13 @@ class OgubsService {
             }
           }
         }
+      } else {
+        print('fetchSchedule: Table #gvDersProgram NOT found.');
       }
       
       return courses;
     } catch (e) {
-      developer.log('fetchSchedule Hata: $e');
+      print('fetchSchedule Hata: $e');
       throw Exception(
         'Ders programı alınırken bir hata oluştu: ${e.toString()}',
       );
@@ -566,8 +563,11 @@ class OgubsService {
   }
 
   Map<String, String> _parseCourseCell(String content) {
-    // Parse content like "KİM.MH.TS.I(239)" or "SÜR.KONT.(239)"
-    final RegExp pattern = RegExp(r'^([^(]+)\(([^)]+)\)$');
+    // Format: "Course Name (Classroom)" or just "Course Name"
+    // Handle potential newlines or extra spaces
+    content = content.replaceAll(RegExp(r'\s+'), ' ').trim();
+    
+    final RegExp pattern = RegExp(r'^(.+?)\s*\(([^)]+)\)$');
     final match = pattern.firstMatch(content);
     
     if (match != null) {
@@ -582,17 +582,16 @@ class OgubsService {
       };
     }
     
+    // Fallback: assume whole content is name if no parens
     return {
-      'name': content,
+      'name': _expandCourseName(content),
       'shortName': content,
       'classroom': '',
     };
   }
 
   String _expandCourseName(String shortName) {
-    // Course name expansion mappings based on common abbreviations
     final Map<String, String> courseExpansions = {
-      // Correct mapping: TASARIM I (not matematiksel hesaplamalar)
       'KİM.MH.TS.I': 'KİMYA MÜHENDİSLİĞİNDE TASARIM I',
       'KİM.MÜH.BL.U': 'KİMYA MÜHENDİSLİĞİNDE BİLGİSAYAR UYGULAMALARI',
       'KİM.LB.II': 'KİMYA MÜHENDİSLİĞİ LABORATUVARI II',
@@ -602,40 +601,29 @@ class OgubsService {
       'MÜH.AR.HZ.': 'MÜHENDİSLİK ARAŞTIRMALARINA HAZIRLIK',
     };
 
-    // Try exact match first
     if (courseExpansions.containsKey(shortName)) {
       return courseExpansions[shortName]!;
     }
 
-    // Try partial matches
     for (final entry in courseExpansions.entries) {
       if (shortName.startsWith(entry.key.split('.')[0])) {
         return entry.value;
       }
     }
 
-    // Return original if no expansion found
     return shortName.replaceAll('.', ' ').trim();
   }
 
   String _getDayFromIndex(int index) {
     switch (index) {
-      case 1:
-        return 'Pazartesi';
-      case 2:
-        return 'Salı';
-      case 3:
-        return 'Çarşamba';
-      case 4:
-        return 'Perşembe';
-      case 5:
-        return 'Cuma';
-      case 6:
-        return 'Cumartesi';
-      case 7:
-        return 'Pazar';
-      default:
-        return 'Bilinmeyen';
+      case 1: return 'Pazartesi';
+      case 2: return 'Salı';
+      case 3: return 'Çarşamba';
+      case 4: return 'Perşembe';
+      case 5: return 'Cuma';
+      case 6: return 'Cumartesi';
+      case 7: return 'Pazar';
+      default: return 'Bilinmeyen';
     }
   }
 
@@ -661,7 +649,6 @@ class OgubsService {
         for (final row in rows) {
           final tds = row.querySelectorAll('td');
           if (tds.length >= 13) {
-            // Indices based on provided HTML
             final code = tds[2].text.trim();
             final name = tds[3].text.trim();
             final classroom = tds[5].text.trim();
@@ -691,13 +678,123 @@ class OgubsService {
 
       return list;
     } catch (e) {
-      developer.log('fetchRegisteredCourses Hata: $e');
+      print('fetchRegisteredCourses Hata: $e');
       throw Exception('Kayıtlı dersler alınırken hata: ${e.toString()}');
     }
   }
 
   void clearSessionCookies() {
     _cookies.clear();
-    developer.log("Session cookies cleared.");
+    print("Session cookies cleared.");
+  }
+
+
+  Future<GradeDetailsModel> fetchGradeDetails(String relativeUrl) async {
+    try {
+      final uri = Uri.parse("https://ogubs1.ogu.edu.tr/$relativeUrl");
+      print('Fetching grade details from: $uri');
+      
+      final response = await _client.get(uri, headers: _getHeaders());
+      _updateCookies(response);
+
+      if (response.statusCode == 200) {
+        return _parseGradeDetails(response.body);
+      } else {
+        throw Exception('Failed to fetch grade details. Status: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching grade details: $e');
+      rethrow;
+    }
+  }
+
+  GradeDetailsModel _parseGradeDetails(String html) {
+    final document = html_parser.parse(html);
+    
+    // Try getElementById
+    var table = document.getElementById('GvHisto');
+    
+    // If not found by ID, search by content
+    if (table == null) {
+      final tables = document.querySelectorAll('table');
+      for (var t in tables) {
+        // Check for unique strings in the table
+        if (t.text.contains('Ortalama') || t.text.contains('Sınıf Ortalaması')) {
+             table = t;
+             break;
+        }
+      }
+    }
+
+    double average = 0.0;
+    int studentCount = 0;
+    final Map<String, int> distribution = {};
+
+    if (table != null) {
+      final rows = table.querySelectorAll('tr');
+      
+      for (final row in rows) {
+        final rowText = row.text.replaceAll('\xa0', ' ').trim();
+        final cells = row.querySelectorAll('td');
+        
+        // Parse Average
+        // HTML: <td>Ortalama:</td><td>72,50</td>
+        // OR: <td>Sınıf Ortalaması:</td><td>49,17</td>
+        if ((rowText.contains('Sınıf Ortalaması') || rowText.contains('Ortalama:')) && cells.length >= 2) {
+          final valText = cells[1].text.replaceAll('\xa0', '').trim();
+          average = double.tryParse(valText.replaceAll(',', '.')) ?? 0.0;
+        }
+
+        // Parse Student Count
+        // HTML: <td colspan='2'>Sınava giren toplam 18 öğrenci vardır.</td>
+        if (rowText.contains('Sınava giren toplam')) {
+          final match = RegExp(r'toplam\s*(\d+)').firstMatch(rowText);
+          if (match != null) {
+            studentCount = int.tryParse(match.group(1)!) ?? 0;
+          }
+        }
+
+        // Parse Distribution
+        // HTML: <td>90-100:</td><td>1</td>
+        if (cells.length == 2) {
+          final rangeText = cells[0].text.replaceAll('\xa0', '').trim().replaceAll(':', '');
+          final countText = cells[1].text.replaceAll('\xa0', '').trim();
+          
+          if (RegExp(r'^\d+-\d+$').hasMatch(rangeText)) {
+            distribution[rangeText] = int.tryParse(countText) ?? 0;
+          }
+        }
+      }
+    } else {
+      // Regex Fallback
+      // Matches: Ortalama:</td><td...>72,50</td> OR Sınıf Ortalaması:</td>...
+      final avgMatch = RegExp(r'(?:Sınıf\s+)?Ortalama:.*?</td>.*?<td.*?>(.*?)</td>', dotAll: true).firstMatch(html);
+      if (avgMatch != null) {
+          // Remove everything except digits and comma
+          String val = avgMatch.group(1)!.replaceAll(RegExp(r'[^\d,]'), '');
+          average = double.tryParse(val.replaceAll(',', '.')) ?? 0.0;
+      }
+      
+      final countMatch = RegExp(r'Sınava giren toplam\s*(\d+)').firstMatch(html);
+      if (countMatch != null) {
+          studentCount = int.tryParse(countMatch.group(1)!) ?? 0;
+      }
+      
+      // Distribution Regex
+      // Matches: >90-100:</td><td width='75' class='grisatir'>1</td>
+      final distMatches = RegExp(r'>(\d+-\d+):</td>\s*<td.*?>(.*?)</td>', dotAll: true).allMatches(html);
+      for (final m in distMatches) {
+          final range = m.group(1)!;
+          final count = m.group(2)!.trim();
+          distribution[range] = int.tryParse(count) ?? 0;
+      }
+    }
+
+    return GradeDetailsModel(
+      average: average,
+      studentCount: studentCount,
+      distribution: distribution,
+    );
   }
 }
+
